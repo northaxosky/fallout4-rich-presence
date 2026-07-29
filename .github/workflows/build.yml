@@ -39,6 +39,7 @@ jobs:
           New-Item -ItemType Directory -Path $dest -Force
           Get-ChildItem -Recurse -Path ".\build\windows\x64\releasedbg" -Include "Fallout4RichPresence.dll", "Fallout4RichPresence.pdb" |
             ForEach-Object { Copy-Item -Path $_.FullName -Destination (Join-Path $dest $_.Name) -Force }
+          Copy-Item -Path ".\data\F4SE\Plugins\Fallout4RichPresence.toml" -Destination $dest -Force
 
       - name: upload artifacts
         uses: actions/upload-artifact@v7

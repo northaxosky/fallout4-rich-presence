@@ -40,13 +40,15 @@ target(plugin_name, function()
     add_rules("commonlibf4.plugin", {
         name = plugin_name,
         author = "Kuz",
-        description = "Discord Rich Presence for Fallout 4"
+        description = "Discord Rich Presence for Fallout 4",
+        plugin_template = "res/commonlibf4-plugin.cpp.in"
     })
 
     -- add src files
     add_files("src/**.cpp")
     add_headerfiles("src/**.h")
     add_includedirs("src")
+    add_installfiles("data/F4SE/Plugins/Fallout4RichPresence.toml", { prefixdir = "F4SE/Plugins" })
     set_pcxxheader("src/pch.h")
 
     -- pass name and version

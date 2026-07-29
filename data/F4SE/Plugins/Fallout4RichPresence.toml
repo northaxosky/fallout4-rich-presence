@@ -1,0 +1,5 @@
+# FOMOD reinstalls replace this file; put personal overrides in Fallout4RichPresenceCustom.toml.
+
+[General]
+iSamplingIntervalMs = 500
+bDebugLogging = false
