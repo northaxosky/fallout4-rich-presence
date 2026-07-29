@@ -12,7 +12,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           submodules: recursive
 
@@ -41,7 +41,7 @@ jobs:
             ForEach-Object { Copy-Item -Path $_.FullName -Destination (Join-Path $dest $_.Name) -Force }
 
       - name: upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Fallout4RichPresence-${{ env.SHORT_SHA }}
           path: "Fallout4RichPresence-${{ env.SHORT_SHA }}"
