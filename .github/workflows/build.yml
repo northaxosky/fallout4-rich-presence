@@ -1,0 +1,47 @@
+name: build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  xmake:
+    runs-on: windows-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: use dev cmd
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: setup xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: "latest"
+
+      - name: config
+        run: xmake config -y --mode=releasedbg --toolchain=msvc
+
+      - name: build
+        run: xmake build -y -vD
+
+      - name: get short sha
+        run: echo "SHORT_SHA=$("${{ github.sha }}".SubString(0, 8))" >> $env:GITHUB_ENV
+
+      - name: bundle
+        run: |
+          $dest = "Fallout4RichPresence-${{ env.SHORT_SHA }}\F4SE\Plugins"
+          New-Item -ItemType Directory -Path $dest -Force
+          Get-ChildItem -Recurse -Path ".\build\windows\x64\releasedbg" -Include "Fallout4RichPresence.dll", "Fallout4RichPresence.pdb" |
+            ForEach-Object { Copy-Item -Path $_.FullName -Destination (Join-Path $dest $_.Name) -Force }
+
+      - name: upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Fallout4RichPresence-${{ env.SHORT_SHA }}
+          path: "Fallout4RichPresence-${{ env.SHORT_SHA }}"
