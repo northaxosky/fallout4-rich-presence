@@ -1,6 +1,9 @@
 #include "pch.h"
 
 #include "Config.h"
+#include "Game/LocationResolver.h"
+#include "Game/PlayerState.h"
+#include "Game/QuestResolver.h"
 #include "Game/Tick.h"
 
 #include <algorithm>
@@ -42,8 +45,10 @@ namespace
 		bool              hasLoggedException{ false };
 	};
 
-	ChainedCall g_chainedCall{ nullptr };
-	TickState   g_tickState{};
+	ChainedCall            g_chainedCall{ nullptr };
+	TickState              g_tickState{};
+	Game::QuestResolver    g_questResolver{};
+	Game::LocationResolver g_locationResolver{};
 
 	template <std::size_t N>
 	[[nodiscard]] bool Matches(const std::uint8_t* a_bytes, const std::array<std::uint8_t, N>& a_expected)
@@ -96,9 +101,31 @@ namespace
 		}
 
 		g_tickState.lastSample = now;
-		REX::DEBUG("Heartbeat #{} ({} ms)",
-			++g_tickState.tickCount,
-			std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count());
+		++g_tickState.tickCount;
+
+		const auto player = RE::PlayerCharacter::GetSingleton();
+		const auto quest = g_questResolver.Resolve(player);
+		const auto location = g_locationResolver.Resolve(player);
+		const auto state = Game::ReadPlayerState(player);
+
+		// REX formats before spdlog tests the level, so gate the call itself
+		if (!Config::IsDebugLoggingEnabled())
+		{
+			return;
+		}
+
+		REX::DEBUG("#{} quest='{}' objective='{}' priority={} location='{}' worldspace='{}' level={} combat={} menu={}{}{}",
+			g_tickState.tickCount,
+			quest.title,
+			quest.objective,
+			static_cast<int>(quest.priority),
+			location.location,
+			location.worldspace,
+			state.level,
+			state.inCombat,
+			state.inMainMenu ? "main"sv : ""sv,
+			state.inLoadingMenu ? "loading"sv : ""sv,
+			state.inLooksMenu ? "looks"sv : ""sv);
 	}
 
 	// never per-frame: a throwing tick would otherwise flood the log
