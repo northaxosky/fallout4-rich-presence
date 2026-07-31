@@ -20,7 +20,7 @@ namespace
 	using Clock = std::chrono::steady_clock;
 	using ChainedCall = void (*)(void*, RE::NiAVObject*);
 
-	inline constexpr REL::VariantID Main_OnIdle{ 633524, 2228917, 2228917 };
+	inline constexpr REL::VariantID Main_OnIdle{ 633524, 2228917 };
 	inline constexpr std::ptrdiff_t kOGHookOffset = 0x76;
 	inline constexpr std::ptrdiff_t kNGHookOffset = 0x158;
 	inline constexpr std::size_t    kAnchorOffset = 0x11;
