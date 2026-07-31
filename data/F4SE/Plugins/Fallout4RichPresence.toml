@@ -3,3 +3,8 @@
 [General]
 iSamplingIntervalMs = 500
 bDebugLogging = false
+
+[Privacy]
+bShowPlayerName = false
+bShowQuest = true
+bShowLocation = true

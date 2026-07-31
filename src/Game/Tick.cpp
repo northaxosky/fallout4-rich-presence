@@ -4,7 +4,9 @@
 #include "Game/LocationResolver.h"
 #include "Game/PlayerState.h"
 #include "Game/QuestResolver.h"
+#include "Game/Snapshot.h"
 #include "Game/Tick.h"
+#include "Presence/Mailbox.h"
 
 #include <algorithm>
 #include <array>
@@ -49,6 +51,9 @@ namespace
 	TickState              g_tickState{};
 	Game::QuestResolver    g_questResolver{};
 	Game::LocationResolver g_locationResolver{};
+	Presence::Mailbox      g_mailbox{};
+	Presence::Activity     g_lastPublished{};
+	bool                   g_hasPublished{ false };
 
 	template <std::size_t N>
 	[[nodiscard]] bool Matches(const std::uint8_t* a_bytes, const std::array<std::uint8_t, N>& a_expected)
@@ -91,6 +96,42 @@ namespace
 		return result;
 	}
 
+	// provisional: slice 5's state machine replaces this with menu-derived states and asset keys
+	[[nodiscard]] Presence::Activity BuildActivity(const Game::Snapshot& a_snapshot)
+	{
+		Presence::Activity activity;
+
+		if (a_snapshot.player.inMainMenu)
+		{
+			activity.details = "Main Menu";
+			return activity;
+		}
+
+		if (a_snapshot.player.inLoadingMenu)
+		{
+			activity.details = "Loading";
+			return activity;
+		}
+
+		if (Config::ShowQuest() && a_snapshot.quest.hasQuest)
+		{
+			activity.details = a_snapshot.quest.title;
+			activity.largeText = a_snapshot.quest.objective;
+		}
+
+		if (Config::ShowLocation())
+		{
+			activity.state = a_snapshot.location.location;
+		}
+
+		if (Config::ShowPlayerName() && !a_snapshot.player.name.empty())
+		{
+			activity.smallText = a_snapshot.player.name;
+		}
+
+		return activity;
+	}
+
 	void RunTick()
 	{
 		const auto now = Clock::now();
@@ -103,10 +144,20 @@ namespace
 		g_tickState.lastSample = now;
 		++g_tickState.tickCount;
 
-		const auto player = RE::PlayerCharacter::GetSingleton();
-		const auto quest = g_questResolver.Resolve(player);
-		const auto location = g_locationResolver.Resolve(player);
-		const auto state = Game::ReadPlayerState(player);
+		const auto           player = RE::PlayerCharacter::GetSingleton();
+		const Game::Snapshot snapshot{
+			.quest = g_questResolver.Resolve(player),
+			.location = g_locationResolver.Resolve(player),
+			.player = Game::ReadPlayerState(player)
+		};
+
+		auto activity = BuildActivity(snapshot);
+		if (!g_hasPublished || !(activity == g_lastPublished))
+		{
+			g_lastPublished = activity;
+			g_hasPublished = true;
+			g_mailbox.Publish(std::move(activity));
+		}
 
 		// REX formats before spdlog tests the level, so gate the call itself
 		if (!Config::IsDebugLoggingEnabled())
@@ -116,16 +167,16 @@ namespace
 
 		REX::DEBUG("#{} quest='{}' objective='{}' priority={} location='{}' worldspace='{}' level={} combat={} menu={}{}{}",
 			g_tickState.tickCount,
-			quest.title,
-			quest.objective,
-			static_cast<int>(quest.priority),
-			location.location,
-			location.worldspace,
-			state.level,
-			state.inCombat,
-			state.inMainMenu ? "main"sv : ""sv,
-			state.inLoadingMenu ? "loading"sv : ""sv,
-			state.inLooksMenu ? "looks"sv : ""sv);
+			snapshot.quest.title,
+			snapshot.quest.objective,
+			static_cast<int>(snapshot.quest.priority),
+			snapshot.location.location,
+			snapshot.location.worldspace,
+			snapshot.player.level,
+			snapshot.player.inCombat,
+			snapshot.player.inMainMenu ? "main"sv : ""sv,
+			snapshot.player.inLoadingMenu ? "loading"sv : ""sv,
+			snapshot.player.inLooksMenu ? "looks"sv : ""sv);
 	}
 
 	// never per-frame: a throwing tick would otherwise flood the log
