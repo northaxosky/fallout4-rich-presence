@@ -23,7 +23,7 @@ namespace Config
 	REX::TTomlSetting<bool>        bShowQuest{ "Privacy"sv, "bShowQuest"sv, true };
 	REX::TTomlSetting<bool>        bShowLocation{ "Privacy"sv, "bShowLocation"sv, true };
 	REX::TTomlSetting<bool>        bShowExactLocation{ "Privacy"sv, "bShowExactLocation"sv, true };
-	REX::TTomlSetting<std::string> sApplicationID{ "Discord"sv, "sApplicationID"sv, "0" };
+	REX::TTomlSetting<std::string> sApplicationID{ "Discord"sv, "sApplicationID"sv, "1533687297684537374" };
 }
 
 namespace

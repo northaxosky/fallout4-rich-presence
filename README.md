@@ -48,7 +48,7 @@ exactly one configuration preset. For a manual installation, copy the DLL and on
 | Privacy | `bShowQuest` | `true` | Makes `{quest}` and `{objective}` available. |
 | Privacy | `bShowLocation` | `true` | Makes `{worldspace}` available and permits location data. |
 | Privacy | `bShowExactLocation` | `true` | Makes `{location}` available when location data is permitted. |
-| Discord | `sApplicationID` | `"0"` | Discord application ID. |
+| Discord | `sApplicationID` | `"1533687297684537374"` | Discord application ID. |
 | Assets | `sAssetDefault` | `"fallout4"` | Large image during normal gameplay. |
 | Assets | `sAssetMainMenu` | `"fallout4"` | Large image at the main menu. |
 | Assets | `sAssetLoading` | `"fallout4"` | Large image while loading. |
@@ -61,7 +61,8 @@ exactly one configuration preset. For a manual installation, copy the DLL and on
 | Format | `sSmallText` | `"{name} - Level {level}"` | Normal in-game small-image tooltip. |
 | Format | `sCombatSmallText` | `"{state}"` | Combat small-image tooltip. |
 
-`sApplicationID` must be replaced with the application ID of a registered Discord application before use.
+Override `sApplicationID` only to point the mod at your own registered Discord application, for
+example to ship different artwork with a modlist.
 `Fallout4RichPresence.toml` is replaced on reinstall, so put personal overrides in
 `Fallout4RichPresenceCustom.toml` next to it. Keys omitted there inherit the selected preset.
 

@@ -11,7 +11,7 @@ bShowLocation = false
 bShowExactLocation = false
 
 [Discord]
-sApplicationID = "0"
+sApplicationID = "1533687297684537374"
 
 [Assets]
 sAssetDefault = "fallout4"
