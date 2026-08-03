@@ -65,6 +65,39 @@ target(plugin_name, function()
     )
 end)
 
+-- assemble the layout a mod manager installs, identical to the CI artifact
+task("package", function()
+    set_menu({
+        usage = "xmake package",
+        description = "Assemble the installable mod layout into dist/"
+    })
+
+    on_run(function()
+        import("core.project.config")
+        config.load()
+
+        local mode = config.get("mode") or "releasedbg"
+        local build = path.join("build", "windows", "x64", mode)
+        local root = "dist"
+        local plugins = path.join(root, "F4SE", "Plugins")
+
+        os.mkdir(plugins)
+
+        for _, name in ipairs({ "Fallout4RichPresence.dll", "Fallout4RichPresence.pdb" }) do
+            local file = path.join(build, name)
+            assert(os.isfile(file), name .. " not found in " .. build .. "; run xmake build first")
+            os.cp(file, plugins)
+        end
+
+        -- overwrite only what we own, so a local Custom.toml survives repackaging
+        os.cp("data/F4SE/Plugins/Fallout4RichPresence.toml", plugins)
+        os.cp("data/presets", root)
+        os.cp("data/fomod", root)
+
+        cprint("${bright green}packaged${clear} %s", path.absolute(root))
+    end)
+end)
+
 target("FormatTemplateTests", function()
     set_kind("binary")
     set_default(false)

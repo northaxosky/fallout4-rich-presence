@@ -24,6 +24,21 @@ The plugin builds to `build/windows/x64/release/Fallout4RichPresence.dll`.
 Run the format-template tests with `xmake build FormatTemplateTests` followed by
 `xmake run FormatTemplateTests`.
 
+## Packaging
+
+`xmake package` assembles the installable mod layout into `dist/` — the same tree the CI
+artifact ships:
+
+```
+dist/
+  F4SE/Plugins/Fallout4RichPresence.{dll,pdb,toml}
+  presets/{Default,Full,Minimal,SpoilerFree}.toml
+  fomod/{ModuleConfig.xml,info.xml}
+```
+
+Point a mod manager at `dist/` as a mod folder, or zip it for release. Repackaging overwrites
+only the files above, so a `Fallout4RichPresenceCustom.toml` you keep there survives.
+
 ## Installing
 
 `xmake install` copies the plugin into `F4SE/Plugins` under the path given by one of these

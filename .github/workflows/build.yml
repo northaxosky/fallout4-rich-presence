@@ -40,14 +40,8 @@ jobs:
 
       - name: bundle
         run: |
-          $root = "Fallout4RichPresence-${{ env.SHORT_SHA }}"
-          $dest = Join-Path $root "F4SE\Plugins"
-          New-Item -ItemType Directory -Path $dest -Force
-          Get-ChildItem -Recurse -Path ".\build\windows\x64\releasedbg" -Include "Fallout4RichPresence.dll", "Fallout4RichPresence.pdb" |
-            ForEach-Object { Copy-Item -Path $_.FullName -Destination (Join-Path $dest $_.Name) -Force }
-          Copy-Item -Path ".\data\F4SE\Plugins\Fallout4RichPresence.toml" -Destination $dest -Force
-          Copy-Item -Path ".\data\presets" -Destination (Join-Path $root "presets") -Recurse -Force
-          Copy-Item -Path ".\data\fomod" -Destination (Join-Path $root "fomod") -Recurse -Force
+          xmake package
+          Rename-Item -Path "dist" -NewName "Fallout4RichPresence-${{ env.SHORT_SHA }}"
 
       - name: upload artifacts
         uses: actions/upload-artifact@v7
