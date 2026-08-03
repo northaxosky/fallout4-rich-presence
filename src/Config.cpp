@@ -84,7 +84,7 @@ namespace
 		{
 			value = Presence::DefaultAssetKey(a_asset);
 			a_setting.SetValue(value);
-			REX::WARN("Assets.{} must be 1-32 lowercase ASCII letters, digits, or underscores; using \"{}\"", a_name, value);
+			REX::WARN("Assets.{} must be up to 32 lowercase ASCII letters, digits, or underscores, or empty for no image; using \"{}\"", a_name, value);
 		}
 		assetKeys[AssetIndex(a_asset)] = std::move(value);
 	}

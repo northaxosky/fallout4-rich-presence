@@ -70,6 +70,10 @@ exactly one configuration preset. For a manual installation, copy the DLL and on
 | Assets | `sAssetCharacterCreation` | `"fallout4"` | Large image during character creation. |
 | Assets | `sAssetPlayer` | `"fallout4"` | Small image beside player information. |
 | Assets | `sAssetCombat` | `"fallout4"` | Small image while in combat. |
+
+An asset key may be empty to show no image for that slot. A small image identical to the large
+image is suppressed, so a single uploaded asset renders one icon rather than a duplicated badge;
+upload distinct art and the badge appears with no configuration change.
 | Format | `sDetails` | `"{quest}"` | In-game details line. |
 | Format | `sState` | `"{location} - {worldspace}"` | In-game state line. |
 | Format | `sLargeText` | `"{objective}"` | In-game large-image tooltip. |

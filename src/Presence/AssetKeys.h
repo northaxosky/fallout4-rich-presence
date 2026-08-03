@@ -22,9 +22,10 @@ namespace Presence
 		return kDefaultAssetKey;
 	}
 
+	// empty means "no image for this slot"; Discord omits an absent asset rather than failing
 	[[nodiscard]] constexpr bool IsValidAssetKey(std::string_view a_key) noexcept
 	{
-		if (a_key.empty() || a_key.size() > 32)
+		if (a_key.size() > 32)
 		{
 			return false;
 		}
@@ -41,6 +42,8 @@ namespace Presence
 
 		return true;
 	}
+
+	static_assert(IsValidAssetKey(""));
 
 	static_assert(IsValidAssetKey(DefaultAssetKey(Asset::kFallout4)));
 	static_assert(IsValidAssetKey(DefaultAssetKey(Asset::kMainMenu)));

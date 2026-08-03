@@ -184,6 +184,19 @@ namespace Presence
 			}
 		}
 
+		// a badge identical to the large image reads as a duplicate; drops out on its own
+		// once distinct art is configured
+		if (activity.smallImage == activity.largeImage)
+		{
+			activity.smallImage.clear();
+		}
+
+		// small text is only a tooltip for the badge
+		if (activity.smallImage.empty())
+		{
+			activity.smallText.clear();
+		}
+
 		return activity;
 	}
 
