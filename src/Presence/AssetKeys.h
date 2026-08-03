@@ -17,9 +17,19 @@ namespace Presence
 
 	inline constexpr std::string_view kDefaultAssetKey = "fallout4";
 
-	[[nodiscard]] constexpr std::string_view DefaultAssetKey(Asset) noexcept
+	// slots without their own uploaded art fall back to the default image
+	[[nodiscard]] constexpr std::string_view DefaultAssetKey(Asset a_asset) noexcept
 	{
-		return kDefaultAssetKey;
+		switch (a_asset)
+		{
+			case Asset::kMainMenu:
+				return "mainmenu";
+			case Asset::kPlayer:
+			case Asset::kCombat:
+				return "vaultboy";
+			default:
+				return kDefaultAssetKey;
+		}
 	}
 
 	// empty means "no image for this slot"; Discord omits an absent asset rather than failing

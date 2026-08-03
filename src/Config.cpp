@@ -28,12 +28,12 @@ namespace Config
 
 namespace
 {
-	REX::TTomlSetting<std::string> sAssetDefault{ "Assets"sv, "sAssetDefault"sv, std::string{ Presence::kDefaultAssetKey } };
-	REX::TTomlSetting<std::string> sAssetMainMenu{ "Assets"sv, "sAssetMainMenu"sv, std::string{ Presence::kDefaultAssetKey } };
-	REX::TTomlSetting<std::string> sAssetLoading{ "Assets"sv, "sAssetLoading"sv, std::string{ Presence::kDefaultAssetKey } };
-	REX::TTomlSetting<std::string> sAssetCharacterCreation{ "Assets"sv, "sAssetCharacterCreation"sv, std::string{ Presence::kDefaultAssetKey } };
-	REX::TTomlSetting<std::string> sAssetPlayer{ "Assets"sv, "sAssetPlayer"sv, std::string{ Presence::kDefaultAssetKey } };
-	REX::TTomlSetting<std::string> sAssetCombat{ "Assets"sv, "sAssetCombat"sv, std::string{ Presence::kDefaultAssetKey } };
+	REX::TTomlSetting<std::string> sAssetDefault{ "Assets"sv, "sAssetDefault"sv, std::string{ Presence::DefaultAssetKey(Presence::Asset::kFallout4) } };
+	REX::TTomlSetting<std::string> sAssetMainMenu{ "Assets"sv, "sAssetMainMenu"sv, std::string{ Presence::DefaultAssetKey(Presence::Asset::kMainMenu) } };
+	REX::TTomlSetting<std::string> sAssetLoading{ "Assets"sv, "sAssetLoading"sv, std::string{ Presence::DefaultAssetKey(Presence::Asset::kLoading) } };
+	REX::TTomlSetting<std::string> sAssetCharacterCreation{ "Assets"sv, "sAssetCharacterCreation"sv, std::string{ Presence::DefaultAssetKey(Presence::Asset::kCharacterCreation) } };
+	REX::TTomlSetting<std::string> sAssetPlayer{ "Assets"sv, "sAssetPlayer"sv, std::string{ Presence::DefaultAssetKey(Presence::Asset::kPlayer) } };
+	REX::TTomlSetting<std::string> sAssetCombat{ "Assets"sv, "sAssetCombat"sv, std::string{ Presence::DefaultAssetKey(Presence::Asset::kCombat) } };
 
 	REX::TTomlSetting<std::string> sDetails{ "Format"sv, "sDetails"sv, std::string{ Config::kDefaultDetailsTemplate } };
 	REX::TTomlSetting<std::string> sState{ "Format"sv, "sState"sv, std::string{ Config::kDefaultStateTemplate } };

@@ -15,11 +15,11 @@ sApplicationID = "1533687297684537374"
 
 [Assets]
 sAssetDefault = "fallout4"
-sAssetMainMenu = "fallout4"
+sAssetMainMenu = "mainmenu"
 sAssetLoading = "fallout4"
 sAssetCharacterCreation = "fallout4"
-sAssetPlayer = "fallout4"
-sAssetCombat = "fallout4"
+sAssetPlayer = "vaultboy"
+sAssetCombat = "vaultboy"
 
 [Format]
 sDetails = ""
