@@ -4,6 +4,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <string>
 
 namespace Config
 {
@@ -14,6 +15,7 @@ namespace Config
 	extern REX::TTomlSetting<bool>         bShowPlayerName;
 	extern REX::TTomlSetting<bool>         bShowQuest;
 	extern REX::TTomlSetting<bool>         bShowLocation;
+	extern REX::TTomlSetting<std::string>  sApplicationID;
 
 	void Load();
 
@@ -22,4 +24,5 @@ namespace Config
 	[[nodiscard]] bool                      ShowPlayerName() noexcept;
 	[[nodiscard]] bool                      ShowQuest() noexcept;
 	[[nodiscard]] bool                      ShowLocation() noexcept;
+	[[nodiscard]] std::string               GetApplicationID();
 }

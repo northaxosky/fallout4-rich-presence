@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <string>
 
 namespace Presence
@@ -24,7 +25,9 @@ namespace Presence
 			       smallImage == a_rhs.smallImage &&
 			       smallText == a_rhs.smallText;
 		}
-
-		[[nodiscard]] bool Empty() const noexcept { return details.empty() && state.empty(); }
 	};
+
+	// nullopt means clear the presence, which is distinct from an activity whose text is
+	// empty but which still carries an icon or elapsed timer
+	using ActivityUpdate = std::optional<Activity>;
 }

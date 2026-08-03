@@ -43,10 +43,21 @@ The shipped defaults are:
 [General]
 iSamplingIntervalMs = 500
 bDebugLogging = false
+
+[Privacy]
+bShowPlayerName = false
+bShowQuest = true
+bShowLocation = true
+
+[Discord]
+sApplicationID = "0"
 ```
 
+`sApplicationID` must be replaced with the application ID of a registered Discord application before use.
 `Fallout4RichPresence.toml` is replaced on reinstall, so put personal overrides in
 `Fallout4RichPresenceCustom.toml` next to it. Keys omitted there inherit the shipped value.
+
+The Discord worker is intentionally leaked until process exit because F4SE provides no safe plugin shutdown callback.
 
 ## License
 

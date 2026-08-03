@@ -2,9 +2,18 @@
 
 #include <REL/Version.h>
 
+namespace Presence
+{
+	class Mailbox;
+}
+
 namespace Game::Tick
 {
 	[[nodiscard]] bool IsSupportedRuntime(const REL::Version& a_runtime) noexcept;
 
 	bool Install(const REL::Version& a_runtime);
+
+	[[nodiscard]] Presence::Mailbox& GetMailbox() noexcept;
+	void                             InvalidateCaches();
+	void                             ResetElapsedEpoch() noexcept;
 }

@@ -8,3 +8,6 @@ bDebugLogging = false
 bShowPlayerName = false
 bShowQuest = true
 bShowLocation = true
+
+[Discord]
+sApplicationID = "0"

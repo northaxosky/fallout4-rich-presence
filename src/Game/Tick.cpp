@@ -38,6 +38,8 @@ namespace
 	inline constexpr std::array<std::uint8_t, 7>  kAnchor{ 0xB9, 0x09, 0x00, 0x00, 0x00, 0xFF, 0x15 };
 	inline constexpr std::array<std::uint8_t, 10> kAfterAnchor{ 0xBB, 0x00, 0x80, 0x00, 0x00, 0x66, 0x85, 0xC3, 0x74, 0x14 };
 
+	[[nodiscard]] std::int64_t UnixTimestamp() noexcept;
+
 	struct TickState
 	{
 		Clock::time_point lastSample{};
@@ -53,6 +55,7 @@ namespace
 	Game::LocationResolver g_locationResolver{};
 	Presence::Mailbox      g_mailbox{};
 	Presence::Activity     g_lastPublished{};
+	std::int64_t           g_startTimestamp{ UnixTimestamp() };
 	bool                   g_hasPublished{ false };
 
 	template <std::size_t N>
@@ -96,6 +99,13 @@ namespace
 		return result;
 	}
 
+	[[nodiscard]] std::int64_t UnixTimestamp() noexcept
+	{
+		return std::chrono::duration_cast<std::chrono::seconds>(
+			std::chrono::system_clock::now().time_since_epoch())
+		    .count();
+	}
+
 	// provisional: slice 5's state machine replaces this with menu-derived states and asset keys
 	[[nodiscard]] Presence::Activity BuildActivity(const Game::Snapshot& a_snapshot)
 	{
@@ -129,6 +139,7 @@ namespace
 			activity.smallText = a_snapshot.player.name;
 		}
 
+		activity.startTimestamp = g_startTimestamp;
 		return activity;
 	}
 
@@ -156,7 +167,7 @@ namespace
 		{
 			g_lastPublished = activity;
 			g_hasPublished = true;
-			g_mailbox.Publish(std::move(activity));
+			g_mailbox.Publish(Presence::ActivityUpdate{ std::move(activity) });
 		}
 
 		// REX formats before spdlog tests the level, so gate the call itself
@@ -220,6 +231,24 @@ namespace
 
 namespace Game::Tick
 {
+	Presence::Mailbox& GetMailbox() noexcept
+	{
+		return g_mailbox;
+	}
+
+	void InvalidateCaches()
+	{
+		g_questResolver.Invalidate();
+		g_locationResolver.Invalidate();
+	}
+
+	void ResetElapsedEpoch() noexcept
+	{
+		g_startTimestamp = UnixTimestamp();
+		g_tickState.lastSample = {};
+		g_hasPublished = false;
+	}
+
 	bool IsSupportedRuntime(const REL::Version& a_runtime) noexcept
 	{
 		return a_runtime == F4SE::RUNTIME_1_10_163 ||
@@ -262,8 +291,13 @@ namespace Game::Tick
 			return false;
 		}
 
-		REX::INFO("Tick hook installed at 0x{:X}; chained target 0x{:X}, trampoline free {} bytes",
-			site, reinterpret_cast<std::uintptr_t>(g_chainedCall), REL::GetTrampoline().free_size());
+		try
+		{
+			REX::INFO("Tick hook installed at 0x{:X}; chained target 0x{:X}, trampoline free {} bytes",
+				site, reinterpret_cast<std::uintptr_t>(g_chainedCall), REL::GetTrampoline().free_size());
+		}
+		catch (...)
+		{}
 		return true;
 	}
 }

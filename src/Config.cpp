@@ -12,9 +12,10 @@ namespace Config
 	REX::TTomlSetting<bool> bDebugLogging{ "General"sv, "bDebugLogging"sv, false };
 
 	// name is personal, quest and location are spoilers; the shipped preset opts into the latter two
-	REX::TTomlSetting<bool> bShowPlayerName{ "Privacy"sv, "bShowPlayerName"sv, false };
-	REX::TTomlSetting<bool> bShowQuest{ "Privacy"sv, "bShowQuest"sv, true };
-	REX::TTomlSetting<bool> bShowLocation{ "Privacy"sv, "bShowLocation"sv, true };
+	REX::TTomlSetting<bool>        bShowPlayerName{ "Privacy"sv, "bShowPlayerName"sv, false };
+	REX::TTomlSetting<bool>        bShowQuest{ "Privacy"sv, "bShowQuest"sv, true };
+	REX::TTomlSetting<bool>        bShowLocation{ "Privacy"sv, "bShowLocation"sv, true };
+	REX::TTomlSetting<std::string> sApplicationID{ "Discord"sv, "sApplicationID"sv, "0" };
 
 	void Load()
 	{
@@ -54,5 +55,10 @@ namespace Config
 	bool ShowLocation() noexcept
 	{
 		return bShowLocation.GetValue();
+	}
+
+	std::string GetApplicationID()
+	{
+		return sApplicationID.GetValue();
 	}
 }

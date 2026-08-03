@@ -18,6 +18,9 @@ set_encodings("utf-8")
 -- set policies
 set_policy("build.optimization.lto", true)
 
+-- add dependencies
+add_requires("nlohmann_json v3.12.0")
+
 -- add common rules
 add_rules("mode.debug", "mode.release", "mode.releasedbg")
 add_rules("plugin.vsxmake.autoupdate")
@@ -49,6 +52,7 @@ target(plugin_name, function()
     add_headerfiles("src/**.h")
     add_includedirs("src")
     add_installfiles("data/F4SE/Plugins/Fallout4RichPresence.toml", { prefixdir = "F4SE/Plugins" })
+    add_packages("nlohmann_json")
     set_pcxxheader("src/pch.h")
 
     -- pass name and version

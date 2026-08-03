@@ -7,44 +7,23 @@
 
 namespace Presence
 {
-	void Mailbox::Publish(Activity a_activity)
+	void Mailbox::Publish(ActivityUpdate a_update)
 	{
-		{
-			const std::scoped_lock lock{ mutex_ };
-			if (stopped_)
-			{
-				return;
-			}
-
-			pending_ = std::move(a_activity);
-			++published_;
-		}
-
-		ready_.notify_one();
+		const std::scoped_lock lock{ mutex_ };
+		pending_ = std::move(a_update);
+		++published_;
 	}
 
-	bool Mailbox::Take(Activity& a_out)
+	bool Mailbox::TryTake(ActivityUpdate& a_out)
 	{
-		std::unique_lock lock{ mutex_ };
-		ready_.wait(lock, [this] { return stopped_ || published_ != taken_; });
-
-		if (stopped_)
+		const std::scoped_lock lock{ mutex_ };
+		if (published_ == taken_)
 		{
 			return false;
 		}
 
-		a_out = pending_;
+		a_out = std::move(pending_);
 		taken_ = published_;
 		return true;
-	}
-
-	void Mailbox::Stop()
-	{
-		{
-			const std::scoped_lock lock{ mutex_ };
-			stopped_ = true;
-		}
-
-		ready_.notify_all();
 	}
 }

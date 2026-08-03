@@ -2,7 +2,6 @@
 
 #include "Presence/Activity.h"
 
-#include <condition_variable>
 #include <cstdint>
 #include <mutex>
 
@@ -12,19 +11,14 @@ namespace Presence
 	class Mailbox
 	{
 	public:
-		void Publish(Activity a_activity);
+		void Publish(ActivityUpdate a_update);
 
-		// blocks until a newer activity arrives or Stop() is called
-		[[nodiscard]] bool Take(Activity& a_out);
-
-		void Stop();
+		[[nodiscard]] bool TryTake(ActivityUpdate& a_out);
 
 	private:
-		std::mutex              mutex_;
-		std::condition_variable ready_;
-		Activity                pending_;
-		std::uint64_t           published_{ 0 };
-		std::uint64_t           taken_{ 0 };
-		bool                    stopped_{ false };
+		std::mutex     mutex_;
+		ActivityUpdate pending_;
+		std::uint64_t  published_{ 0 };
+		std::uint64_t  taken_{ 0 };
 	};
 }
