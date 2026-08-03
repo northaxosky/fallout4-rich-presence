@@ -36,8 +36,8 @@ namespace Discord::Protocol
 
 	inline constexpr std::size_t kHeaderSize = 8;
 	inline constexpr std::size_t kMaxPayloadSize = 64 * 1024;
-	inline constexpr std::size_t kTextLimit = 128;
-	inline constexpr std::size_t kAssetKeyLimit = 32;
+	inline constexpr std::size_t kTextLimit = Presence::kActivityTextLimit;
+	inline constexpr std::size_t kAssetKeyLimit = Presence::kActivityAssetKeyLimit;
 
 	[[nodiscard]] inline std::array<std::uint8_t, kHeaderSize> EncodeHeader(Opcode a_opcode, std::uint32_t a_payloadSize) noexcept
 	{

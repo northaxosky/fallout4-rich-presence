@@ -59,6 +59,30 @@ sApplicationID = "0"
 
 The Discord worker is intentionally leaked until process exit because F4SE provides no safe plugin shutdown callback.
 
+## Runtime verification
+
+Set `bDebugLogging = true` in `Fallout4RichPresenceCustom.toml`, then inspect
+`Documents/My Games/Fallout4/F4SE/Fallout4RichPresence.log`.
+
+1. Cold-launch to the title screen. Every sample before and at the main menu must show `sessionActive=false`, and `presence=in_game` must never appear.
+2. Load a save, then quit back to the title screen. A successful load must change `sessionActive` to `true`; the first observed main-menu sample must change it back to `false`, with no previous quest or location published afterward.
+3. Enter and leave combat. `combatStable` must change only after two consecutive equal `combatRaw` samples.
+4. Use an interior door that closes within one sample. It must log `holding=true` without publishing the loading activity; a loading menu must persist for two samples before becoming visible.
+5. For chargen settling only, also set `bShowPlayerName = true` and `iSamplingIntervalMs = 50`. After the Looks menu closes, `nameTrusted` must remain `false` for at least 200 ms before becoming `true`.
+
+Restore the 500 ms sampling interval and disable debug logging after testing.
+
+## Discord asset checklist
+
+Upload Rich Presence art to the Discord application under these exact lowercase keys:
+
+- [ ] `fallout4` — Fallout 4 key art or logo for normal gameplay.
+- [ ] `main_menu` — Fallout 4 title-screen art for the main menu.
+- [ ] `loading` — Vault-Tec loading-screen art for load transitions.
+- [ ] `character_creation` — Vault 111 character-creation art for the Looks menu.
+- [ ] `player` — A neutral Vault Boy portrait for player information.
+- [ ] `combat` — A clear combat or crosshair icon for the in-combat modifier.
+
 ## License
 
 GPL-3.0. See [LICENSE](LICENSE).

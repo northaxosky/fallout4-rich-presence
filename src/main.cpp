@@ -50,6 +50,7 @@ namespace
 		try
 		{
 			Game::Tick::InvalidateCaches();
+			Game::Tick::BeginSession();
 			Game::Tick::ResetElapsedEpoch();
 		}
 		catch (const std::exception& a_exception)
@@ -114,7 +115,7 @@ namespace
 
 		if (!listenerRegistered)
 		{
-			REX::ERROR("F4SE messaging listener registration failed; save-change resets disabled");
+			REX::ERROR("F4SE messaging listener registration failed; game-session presence disabled");
 		}
 
 		if (validApplicationID && !Discord::Worker::Start(Game::Tick::GetMailbox(), std::move(applicationID)))

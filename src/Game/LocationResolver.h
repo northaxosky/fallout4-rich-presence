@@ -14,6 +14,8 @@ namespace Game
 	{
 		std::string location;
 		std::string worldspace;
+
+		bool operator==(const LocationDetails&) const = default;
 	};
 
 	class LocationResolver
@@ -24,18 +26,15 @@ namespace Game
 		void Invalidate();
 
 	private:
-		// a read can return empty mid-transition, so hold the last good value briefly
-		static constexpr std::uint8_t kEmptySampleThreshold = 3;
+		// hold the composed pair so independently stale fields can never be combined
+		static constexpr std::uint8_t kSettleSampleThreshold = 3;
 
-		struct Latched
-		{
-			std::string  value;
-			std::uint8_t emptySamples{ 0 };
-		};
+		void ResetPending() noexcept;
+		void Update(LocationDetails a_current);
 
-		void Update(Latched& a_latched, std::string a_current) const;
-
-		Latched location_;
-		Latched worldspace_;
+		LocationDetails latched_;
+		LocationDetails pending_;
+		std::uint8_t    emptySamples_{ 0 };
+		std::uint8_t    pendingSamples_{ 0 };
 	};
 }

@@ -14,6 +14,7 @@ namespace Game::Tick
 	bool Install(const REL::Version& a_runtime);
 
 	[[nodiscard]] Presence::Mailbox& GetMailbox() noexcept;
+	void                             BeginSession() noexcept;
 	void                             InvalidateCaches();
 	void                             ResetElapsedEpoch() noexcept;
 }

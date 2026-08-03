@@ -55,42 +55,76 @@ namespace Game
 {
 	void LocationResolver::Invalidate()
 	{
-		location_ = {};
-		worldspace_ = {};
+		latched_ = {};
+		emptySamples_ = 0;
+		ResetPending();
 	}
 
-	void LocationResolver::Update(Latched& a_latched, std::string a_current) const
+	void LocationResolver::ResetPending() noexcept
 	{
-		if (!a_current.empty())
+		pending_ = {};
+		pendingSamples_ = 0;
+	}
+
+	void LocationResolver::Update(LocationDetails a_current)
+	{
+		const auto hasLocation = !a_current.location.empty();
+		const auto hasWorldspace = !a_current.worldspace.empty();
+		if (!hasLocation && !hasWorldspace)
 		{
-			a_latched.value = std::move(a_current);
-			a_latched.emptySamples = 0;
+			ResetPending();
+			if (emptySamples_ < kSettleSampleThreshold && ++emptySamples_ == kSettleSampleThreshold)
+			{
+				latched_ = {};
+			}
+			return;
 		}
-		else if (a_latched.emptySamples < kEmptySampleThreshold && ++a_latched.emptySamples == kEmptySampleThreshold)
+
+		emptySamples_ = 0;
+		if ((latched_.location.empty() && latched_.worldspace.empty()) ||
+			(hasLocation && hasWorldspace) ||
+			a_current == latched_)
 		{
-			a_latched.value.clear();
+			latched_ = std::move(a_current);
+			ResetPending();
+			return;
+		}
+
+		if (a_current == pending_)
+		{
+			if (pendingSamples_ < kSettleSampleThreshold)
+			{
+				++pendingSamples_;
+			}
+		}
+		else
+		{
+			pending_ = std::move(a_current);
+			pendingSamples_ = 1;
+		}
+
+		if (pendingSamples_ >= kSettleSampleThreshold)
+		{
+			latched_ = std::move(pending_);
+			ResetPending();
 		}
 	}
 
 	LocationDetails LocationResolver::Resolve(RE::PlayerCharacter* a_player)
 	{
+		LocationDetails current;
 		if (a_player)
 		{
-			Update(location_, ReadLocation(*a_player));
-			Update(worldspace_, ReadWorldspace(*a_player));
-		}
-		else
-		{
-			Update(location_, {});
-			Update(worldspace_, {});
+			current.location = ReadLocation(*a_player);
+			current.worldspace = ReadWorldspace(*a_player);
 		}
 
-		LocationDetails result{ .location = location_.value, .worldspace = worldspace_.value };
-		if (!result.worldspace.empty() && result.worldspace == result.location)
+		if (!current.worldspace.empty() && current.worldspace == current.location)
 		{
-			result.worldspace.clear();
+			current.worldspace.clear();
 		}
 
-		return result;
+		Update(std::move(current));
+		return latched_;
 	}
 }

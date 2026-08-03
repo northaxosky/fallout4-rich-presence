@@ -1,11 +1,15 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string>
 
 namespace Presence
 {
+	inline constexpr std::size_t kActivityTextLimit = 128;
+	inline constexpr std::size_t kActivityAssetKeyLimit = 32;
+
 	struct Activity
 	{
 		std::string  details;
@@ -27,7 +31,9 @@ namespace Presence
 		}
 	};
 
-	// nullopt means clear the presence, which is distinct from an activity whose text is
-	// empty but which still carries an icon or elapsed timer
+	// nullopt clears presence; an activity may legitimately contain only an icon or timer
 	using ActivityUpdate = std::optional<Activity>;
+
+	[[nodiscard]] Activity       NormalizeActivity(Activity a_activity);
+	[[nodiscard]] ActivityUpdate NormalizeActivity(ActivityUpdate a_update);
 }

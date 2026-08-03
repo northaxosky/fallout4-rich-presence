@@ -7,6 +7,7 @@
 #include "Game/Snapshot.h"
 #include "Game/Tick.h"
 #include "Presence/Mailbox.h"
+#include "Presence/StateMachine.h"
 
 #include <algorithm>
 #include <array>
@@ -49,14 +50,15 @@ namespace
 		bool              hasLoggedException{ false };
 	};
 
-	ChainedCall            g_chainedCall{ nullptr };
-	TickState              g_tickState{};
-	Game::QuestResolver    g_questResolver{};
-	Game::LocationResolver g_locationResolver{};
-	Presence::Mailbox      g_mailbox{};
-	Presence::Activity     g_lastPublished{};
-	std::int64_t           g_startTimestamp{ UnixTimestamp() };
-	bool                   g_hasPublished{ false };
+	ChainedCall              g_chainedCall{ nullptr };
+	TickState                g_tickState{};
+	Game::QuestResolver      g_questResolver{};
+	Game::LocationResolver   g_locationResolver{};
+	Presence::Mailbox        g_mailbox{};
+	Presence::StateMachine   g_stateMachine{};
+	Presence::ActivityUpdate g_lastPublished{};
+	std::int64_t             g_startTimestamp{ UnixTimestamp() };
+	bool                     g_hasPublished{ false };
 
 	template <std::size_t N>
 	[[nodiscard]] bool Matches(const std::uint8_t* a_bytes, const std::array<std::uint8_t, N>& a_expected)
@@ -106,43 +108,6 @@ namespace
 		    .count();
 	}
 
-	// provisional: slice 5's state machine replaces this with menu-derived states and asset keys
-	[[nodiscard]] Presence::Activity BuildActivity(const Game::Snapshot& a_snapshot)
-	{
-		Presence::Activity activity;
-
-		if (a_snapshot.player.inMainMenu)
-		{
-			activity.details = "Main Menu";
-			return activity;
-		}
-
-		if (a_snapshot.player.inLoadingMenu)
-		{
-			activity.details = "Loading";
-			return activity;
-		}
-
-		if (Config::ShowQuest() && a_snapshot.quest.hasQuest)
-		{
-			activity.details = a_snapshot.quest.title;
-			activity.largeText = a_snapshot.quest.objective;
-		}
-
-		if (Config::ShowLocation())
-		{
-			activity.state = a_snapshot.location.location;
-		}
-
-		if (Config::ShowPlayerName() && !a_snapshot.player.name.empty())
-		{
-			activity.smallText = a_snapshot.player.name;
-		}
-
-		activity.startTimestamp = g_startTimestamp;
-		return activity;
-	}
-
 	void RunTick()
 	{
 		const auto now = Clock::now();
@@ -162,8 +127,9 @@ namespace
 			.player = Game::ReadPlayerState(player)
 		};
 
-		auto activity = BuildActivity(snapshot);
-		if (!g_hasPublished || !(activity == g_lastPublished))
+		auto activity = Presence::NormalizeActivity(g_stateMachine.Update(snapshot, g_startTimestamp, now));
+		if (!g_stateMachine.IsHoldingActivity() &&
+			(!g_hasPublished || !(activity == g_lastPublished)))
 		{
 			g_lastPublished = activity;
 			g_hasPublished = true;
@@ -176,8 +142,11 @@ namespace
 			return;
 		}
 
-		REX::DEBUG("#{} quest='{}' objective='{}' priority={} location='{}' worldspace='{}' level={} combat={} menu={}{}{}",
+		REX::DEBUG("#{} presence={} holding={} sessionActive={} quest='{}' objective='{}' priority={} location='{}' worldspace='{}' level={} combatRaw={} combatStable={} mainMenu={} loadingMenu={} looksMenu={} charGenFlag={} nameTrusted={}",
 			g_tickState.tickCount,
+			Presence::ToString(g_stateMachine.GetState()),
+			g_stateMachine.IsHoldingActivity(),
+			g_stateMachine.IsSessionActive(),
 			snapshot.quest.title,
 			snapshot.quest.objective,
 			static_cast<int>(snapshot.quest.priority),
@@ -185,9 +154,12 @@ namespace
 			snapshot.location.worldspace,
 			snapshot.player.level,
 			snapshot.player.inCombat,
-			snapshot.player.inMainMenu ? "main"sv : ""sv,
-			snapshot.player.inLoadingMenu ? "loading"sv : ""sv,
-			snapshot.player.inLooksMenu ? "looks"sv : ""sv);
+			g_stateMachine.IsCombatActive(),
+			snapshot.player.inMainMenu,
+			snapshot.player.inLoadingMenu,
+			snapshot.player.inLooksMenu,
+			static_cast<int>(snapshot.player.charGenFlag),
+			g_stateMachine.IsPlayerNameTrusted());
 	}
 
 	// never per-frame: a throwing tick would otherwise flood the log
@@ -234,6 +206,11 @@ namespace Game::Tick
 	Presence::Mailbox& GetMailbox() noexcept
 	{
 		return g_mailbox;
+	}
+
+	void BeginSession() noexcept
+	{
+		g_stateMachine.BeginSession();
 	}
 
 	void InvalidateCaches()
