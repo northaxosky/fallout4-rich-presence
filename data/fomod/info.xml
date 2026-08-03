@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<fomod>
+	<Name>Fallout 4 Rich Presence</Name>
+	<Author>Kuz</Author>
+	<Version>0.1.0</Version>
+	<Website>https://github.com/northaxosky/fallout4-rich-presence</Website>
+	<Description>Discord Rich Presence for Fallout 4.</Description>
+	<Groups>
+		<element>Utilities</element>
+	</Groups>
+</fomod>

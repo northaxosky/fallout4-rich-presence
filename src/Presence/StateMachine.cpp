@@ -3,10 +3,11 @@
 #include "Config.h"
 #include "Game/Snapshot.h"
 #include "Presence/AssetKeys.h"
+#include "Presence/FormatTemplate.h"
 #include "Presence/StateMachine.h"
 
-#include <format>
 #include <string>
+#include <string_view>
 
 namespace
 {
@@ -14,53 +15,10 @@ namespace
 	{
 		Presence::Activity activity;
 		activity.details = a_details;
-		activity.largeImage = Presence::ToAssetKey(a_asset);
+		activity.largeImage = Config::GetAssetKey(a_asset);
 		activity.largeText = "Fallout 4";
 		activity.startTimestamp = a_startTimestamp;
 		return activity;
-	}
-
-	[[nodiscard]] std::string BuildLocationText(const Game::Snapshot& a_snapshot)
-	{
-		if (!Config::ShowLocation())
-		{
-			return {};
-		}
-
-		auto location = a_snapshot.location.location;
-		if (!a_snapshot.location.worldspace.empty())
-		{
-			if (!location.empty())
-			{
-				location += " - ";
-			}
-			location += a_snapshot.location.worldspace;
-		}
-		return location;
-	}
-
-	[[nodiscard]] std::string BuildPlayerText(const Game::Snapshot& a_snapshot, bool a_nameTrusted)
-	{
-		std::string player;
-		if (Config::ShowPlayerName() && a_nameTrusted)
-		{
-			player = a_snapshot.player.name;
-		}
-
-		if (a_snapshot.player.level > 0)
-		{
-			if (!player.empty())
-			{
-				player += " - ";
-			}
-			player += std::format("Level {}", a_snapshot.player.level);
-		}
-		return player;
-	}
-
-	[[nodiscard]] std::string BuildLevelText(const Game::Snapshot& a_snapshot)
-	{
-		return a_snapshot.player.level > 0 ? std::format("Level {}", a_snapshot.player.level) : std::string{};
 	}
 }
 
@@ -184,39 +142,45 @@ namespace Presence
 	Activity StateMachine::BuildInGame(const Game::Snapshot& a_snapshot, std::int64_t a_startTimestamp, bool a_nameTrusted) const
 	{
 		Activity activity;
-		activity.largeImage = ToAssetKey(Asset::kFallout4);
+		activity.largeImage = Config::GetAssetKey(Asset::kFallout4);
 		activity.startTimestamp = a_startTimestamp;
 
-		if (Config::ShowQuest() && a_snapshot.quest.hasQuest)
-		{
-			activity.details = a_snapshot.quest.title;
-			if (a_snapshot.quest.hasObjective)
-			{
-				activity.largeText = a_snapshot.quest.objective;
-			}
-		}
+		const auto showName = Config::ShowPlayerName() && a_nameTrusted;
+		const auto showQuest = Config::ShowQuest();
+		const auto showLocation = Config::ShowLocation();
+		const auto showExactLocation = showLocation && Config::ShowExactLocation();
+		const auto level = a_snapshot.player.level > 0 ? std::to_string(a_snapshot.player.level) : std::string{};
+		const auto state = combatActive_ ? "In Combat"sv : "In Game"sv;
 
-		activity.state = BuildLocationText(a_snapshot);
+		const FormatValues values{
+			.name = showName ? std::string_view{ a_snapshot.player.name } : std::string_view{},
+			.level = level,
+			.quest = showQuest && a_snapshot.quest.hasQuest ? std::string_view{ a_snapshot.quest.title } : std::string_view{},
+			.objective = showQuest && a_snapshot.quest.hasQuest && a_snapshot.quest.hasObjective ? std::string_view{ a_snapshot.quest.objective } : std::string_view{},
+			.location = showExactLocation ? std::string_view{ a_snapshot.location.location } : std::string_view{},
+			.worldspace = showLocation ? std::string_view{ a_snapshot.location.worldspace } : std::string_view{},
+			.state = state
+		};
+
+		activity.details = Config::GetDetailsTemplate().Render(values);
+		activity.state = Config::GetStateTemplate().Render(values);
+		activity.largeText = Config::GetLargeTextTemplate().Render(values);
 		if (activity.details.empty() && activity.state.empty())
 		{
-			activity.state = BuildLevelText(a_snapshot);
-			if (activity.state.empty())
-			{
-				activity.state = "In Game";
-			}
+			activity.state = level.empty() ? "In Game" : "Level " + level;
 		}
 
 		if (combatActive_)
 		{
-			activity.smallImage = ToAssetKey(Asset::kCombat);
-			activity.smallText = "In Combat";
+			activity.smallImage = Config::GetAssetKey(Asset::kCombat);
+			activity.smallText = Config::GetCombatSmallTextTemplate().Render(values);
 		}
 		else
 		{
-			activity.smallText = BuildPlayerText(a_snapshot, a_nameTrusted);
+			activity.smallText = Config::GetSmallTextTemplate().Render(values);
 			if (!activity.smallText.empty())
 			{
-				activity.smallImage = ToAssetKey(Asset::kPlayer);
+				activity.smallImage = Config::GetAssetKey(Asset::kPlayer);
 			}
 		}
 

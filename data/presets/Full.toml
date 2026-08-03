@@ -5,7 +5,7 @@ iSamplingIntervalMs = 500
 bDebugLogging = false
 
 [Privacy]
-bShowPlayerName = false
+bShowPlayerName = true
 bShowQuest = true
 bShowLocation = true
 bShowExactLocation = true

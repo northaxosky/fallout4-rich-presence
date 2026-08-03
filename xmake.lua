@@ -64,3 +64,12 @@ target(plugin_name, function()
         "PLUGIN_VERSION_PATCH=" .. plugin_version_patch
     )
 end)
+
+target("FormatTemplateTests", function()
+    set_kind("binary")
+    set_default(false)
+    add_deps("commonlibf4")
+    add_files("tests/FormatTemplateTests.cpp", "src/Presence/FormatTemplate.cpp")
+    add_includedirs("src")
+    set_pcxxheader("src/pch.h")
+end)

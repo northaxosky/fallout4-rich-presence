@@ -21,6 +21,8 @@ xmake build
 ```
 
 The plugin builds to `build/windows/x64/release/Fallout4RichPresence.dll`.
+Run the format-template tests with `xmake build FormatTemplateTests` followed by
+`xmake run FormatTemplateTests`.
 
 ## Installing
 
@@ -32,30 +34,63 @@ environment variables, whichever is set first:
 | `XSE_FO4_MODS_PATH` | A mod manager's mods directory. The plugin installs into its own mod folder. |
 | `XSE_FO4_GAME_PATH` | The Fallout 4 install directory. The plugin installs into `Data`. |
 
-Otherwise, copy the DLL and `data/F4SE/Plugins/Fallout4RichPresence.toml` to
-`Data/F4SE/Plugins` yourself.
+Release archives include a FOMOD installer. Install the archive with a mod manager and choose
+exactly one configuration preset. For a manual installation, copy the DLL and one file from
+`presets` to `Data/F4SE/Plugins`, renaming the preset to `Fallout4RichPresence.toml`.
 
 ## Configuration
 
-The shipped defaults are:
-
-```toml
-[General]
-iSamplingIntervalMs = 500
-bDebugLogging = false
-
-[Privacy]
-bShowPlayerName = false
-bShowQuest = true
-bShowLocation = true
-
-[Discord]
-sApplicationID = "0"
-```
+| Section | Key | Default | Purpose |
+| --- | --- | --- | --- |
+| General | `iSamplingIntervalMs` | `500` | Milliseconds between game-state samples. |
+| General | `bDebugLogging` | `false` | Enables diagnostic logging. |
+| Privacy | `bShowPlayerName` | `false` | Makes `{name}` available to templates. |
+| Privacy | `bShowQuest` | `true` | Makes `{quest}` and `{objective}` available. |
+| Privacy | `bShowLocation` | `true` | Makes `{worldspace}` available and permits location data. |
+| Privacy | `bShowExactLocation` | `true` | Makes `{location}` available when location data is permitted. |
+| Discord | `sApplicationID` | `"0"` | Discord application ID. |
+| Assets | `sAssetDefault` | `"fallout4"` | Large image during normal gameplay. |
+| Assets | `sAssetMainMenu` | `"fallout4"` | Large image at the main menu. |
+| Assets | `sAssetLoading` | `"fallout4"` | Large image while loading. |
+| Assets | `sAssetCharacterCreation` | `"fallout4"` | Large image during character creation. |
+| Assets | `sAssetPlayer` | `"fallout4"` | Small image beside player information. |
+| Assets | `sAssetCombat` | `"fallout4"` | Small image while in combat. |
+| Format | `sDetails` | `"{quest}"` | In-game details line. |
+| Format | `sState` | `"{location} - {worldspace}"` | In-game state line. |
+| Format | `sLargeText` | `"{objective}"` | In-game large-image tooltip. |
+| Format | `sSmallText` | `"{name} - Level {level}"` | Normal in-game small-image tooltip. |
+| Format | `sCombatSmallText` | `"{state}"` | Combat small-image tooltip. |
 
 `sApplicationID` must be replaced with the application ID of a registered Discord application before use.
 `Fallout4RichPresence.toml` is replaced on reinstall, so put personal overrides in
-`Fallout4RichPresenceCustom.toml` next to it. Keys omitted there inherit the shipped value.
+`Fallout4RichPresenceCustom.toml` next to it. Keys omitted there inherit the selected preset.
+
+### Presets
+
+| Preset | Gameplay text |
+| --- | --- |
+| Default | Quest, objective, location, worldspace, and level; player name hidden. |
+| Spoiler-free | Worldspace and level; quest, objective, exact location, and player name hidden. |
+| Full | Quest, objective, location, worldspace, player name, and level. |
+| Minimal | Level only. |
+
+Each preset is a complete base configuration, and the installer never includes the custom file.
+If a mod manager replaces whole mod directories on reinstall, keep the custom file in a separate
+higher-priority mod.
+
+### Format templates
+
+The in-game format keys accept `{name}`, `{level}`, `{quest}`, `{objective}`, `{location}`,
+`{worldspace}`, and `{state}`. `{state}` resolves to `In Game` or `In Combat`. Main-menu,
+loading, and character-creation labels remain fixed.
+
+Hidden or unavailable values resolve to empty. An empty token joins the separator runs on either
+side into one boundary, then whitespace is collapsed without splitting UTF-8 code points. If
+every token is empty, the field is empty; templates without tokens remain constant text after
+whitespace normalization. For example,
+`{quest} - {objective} - {location}` becomes `Reunions - Diamond City` when the objective is
+missing. Sources over 512 bytes, unknown tokens, and unbalanced braces fall back to that key's
+compiled-in default.
 
 The Discord worker is intentionally leaked until process exit because F4SE provides no safe plugin shutdown callback.
 
@@ -74,14 +109,9 @@ Restore the 500 ms sampling interval and disable debug logging after testing.
 
 ## Discord asset checklist
 
-Upload Rich Presence art to the Discord application under these exact lowercase keys:
-
-- [ ] `fallout4` — Fallout 4 key art or logo for normal gameplay.
-- [ ] `main_menu` — Fallout 4 title-screen art for the main menu.
-- [ ] `loading` — Vault-Tec loading-screen art for load transitions.
-- [ ] `character_creation` — Vault 111 character-creation art for the Looks menu.
-- [ ] `player` — A neutral Vault Boy portrait for player information.
-- [ ] `combat` — A clear combat or crosshair icon for the in-combat modifier.
+Upload one Rich Presence image under the key `fallout4`; every asset slot uses it by default.
+Custom artwork can use a different configured key for each slot. Keys must contain 1-32 lowercase
+ASCII letters, digits, or underscores. Invalid configured keys fall back to `fallout4`.
 
 ## License
 

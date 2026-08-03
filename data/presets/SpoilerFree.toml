@@ -6,9 +6,9 @@ bDebugLogging = false
 
 [Privacy]
 bShowPlayerName = false
-bShowQuest = true
+bShowQuest = false
 bShowLocation = true
-bShowExactLocation = true
+bShowExactLocation = false
 
 [Discord]
 sApplicationID = "0"
@@ -22,8 +22,8 @@ sAssetPlayer = "fallout4"
 sAssetCombat = "fallout4"
 
 [Format]
-sDetails = "{quest}"
-sState = "{location} - {worldspace}"
-sLargeText = "{objective}"
+sDetails = ""
+sState = "{worldspace}"
+sLargeText = ""
 sSmallText = "{name} - Level {level}"
 sCombatSmallText = "{state}"

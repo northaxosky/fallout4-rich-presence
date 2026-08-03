@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://qconsulting.ca/fo3/ModConfig5.0.xsd">
+	<moduleName>Fallout 4 Rich Presence</moduleName>
+	<requiredInstallFiles>
+		<file source="F4SE\Plugins\Fallout4RichPresence.dll" destination="F4SE\Plugins\Fallout4RichPresence.dll" priority="0" />
+		<file source="F4SE\Plugins\Fallout4RichPresence.pdb" destination="F4SE\Plugins\Fallout4RichPresence.pdb" priority="0" />
+	</requiredInstallFiles>
+	<installSteps order="Explicit">
+		<installStep name="Choose a presence preset">
+			<optionalFileGroups order="Explicit">
+				<group name="Presence preset" type="SelectExactlyOne">
+					<plugins order="Explicit">
+						<plugin name="Default">
+							<description>Hide the player name and show quest and location information.</description>
+							<files>
+								<file source="presets\Default.toml" destination="F4SE\Plugins\Fallout4RichPresence.toml" priority="0" />
+							</files>
+							<typeDescriptor>
+								<type name="Recommended" />
+							</typeDescriptor>
+						</plugin>
+						<plugin name="Spoiler-free">
+							<description>Hide quest and objective text and show only the current worldspace.</description>
+							<files>
+								<file source="presets\SpoilerFree.toml" destination="F4SE\Plugins\Fallout4RichPresence.toml" priority="0" />
+							</files>
+							<typeDescriptor>
+								<type name="Optional" />
+							</typeDescriptor>
+						</plugin>
+						<plugin name="Full">
+							<description>Show player name, quest, objective, and location information.</description>
+							<files>
+								<file source="presets\Full.toml" destination="F4SE\Plugins\Fallout4RichPresence.toml" priority="0" />
+							</files>
+							<typeDescriptor>
+								<type name="Optional" />
+							</typeDescriptor>
+						</plugin>
+						<plugin name="Minimal">
+							<description>Show only the player level during gameplay.</description>
+							<files>
+								<file source="presets\Minimal.toml" destination="F4SE\Plugins\Fallout4RichPresence.toml" priority="0" />
+							</files>
+							<typeDescriptor>
+								<type name="Optional" />
+							</typeDescriptor>
+						</plugin>
+					</plugins>
+				</group>
+			</optionalFileGroups>
+		</installStep>
+	</installSteps>
+</config>

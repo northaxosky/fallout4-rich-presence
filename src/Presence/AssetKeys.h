@@ -15,25 +15,11 @@ namespace Presence
 		kCombat
 	};
 
-	[[nodiscard]] constexpr std::string_view ToAssetKey(Asset a_asset) noexcept
-	{
-		switch (a_asset)
-		{
-			case Asset::kFallout4:
-				return "fallout4";
-			case Asset::kMainMenu:
-				return "main_menu";
-			case Asset::kLoading:
-				return "loading";
-			case Asset::kCharacterCreation:
-				return "character_creation";
-			case Asset::kPlayer:
-				return "player";
-			case Asset::kCombat:
-				return "combat";
-		}
+	inline constexpr std::string_view kDefaultAssetKey = "fallout4";
 
-		return {};
+	[[nodiscard]] constexpr std::string_view DefaultAssetKey(Asset) noexcept
+	{
+		return kDefaultAssetKey;
 	}
 
 	[[nodiscard]] constexpr bool IsValidAssetKey(std::string_view a_key) noexcept
@@ -56,10 +42,10 @@ namespace Presence
 		return true;
 	}
 
-	static_assert(IsValidAssetKey(ToAssetKey(Asset::kFallout4)));
-	static_assert(IsValidAssetKey(ToAssetKey(Asset::kMainMenu)));
-	static_assert(IsValidAssetKey(ToAssetKey(Asset::kLoading)));
-	static_assert(IsValidAssetKey(ToAssetKey(Asset::kCharacterCreation)));
-	static_assert(IsValidAssetKey(ToAssetKey(Asset::kPlayer)));
-	static_assert(IsValidAssetKey(ToAssetKey(Asset::kCombat)));
+	static_assert(IsValidAssetKey(DefaultAssetKey(Asset::kFallout4)));
+	static_assert(IsValidAssetKey(DefaultAssetKey(Asset::kMainMenu)));
+	static_assert(IsValidAssetKey(DefaultAssetKey(Asset::kLoading)));
+	static_assert(IsValidAssetKey(DefaultAssetKey(Asset::kCharacterCreation)));
+	static_assert(IsValidAssetKey(DefaultAssetKey(Asset::kPlayer)));
+	static_assert(IsValidAssetKey(DefaultAssetKey(Asset::kCombat)));
 }
