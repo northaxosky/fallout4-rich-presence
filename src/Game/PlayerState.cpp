@@ -6,7 +6,7 @@
 
 namespace Game
 {
-	PlayerState ReadPlayerState(RE::PlayerCharacter* a_player)
+	PlayerState ReadPlayerState(RE::PlayerCharacter* a_player, bool a_sessionActive)
 	{
 		PlayerState state;
 
@@ -16,7 +16,8 @@ namespace Game
 			state.inLoadingMenu = ui->GetMenuOpen<RE::LoadingMenu>();
 		}
 
-		if (!a_player)
+		// the singleton exists from process start, but its actor data is only bound once a session does
+		if (!a_player || !a_sessionActive)
 		{
 			return state;
 		}
@@ -28,9 +29,11 @@ namespace Game
 			{
 				state.name = name;
 			}
+
+			// Actor::GetLevel is a native call that dereferences the base NPC unguarded
+			state.level = a_player->GetLevel();
 		}
 
-		state.level = a_player->GetLevel();
 		state.inCombat = a_player->IsInCombat();
 		state.charGenFlag = a_player->byCharGenFlag;
 		state.inLooksMenu = a_player->inLooksMenu;

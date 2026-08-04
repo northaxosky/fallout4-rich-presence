@@ -21,5 +21,5 @@ namespace Game
 		bool         inLooksMenu{ false };
 	};
 
-	[[nodiscard]] PlayerState ReadPlayerState(RE::PlayerCharacter* a_player);
+	[[nodiscard]] PlayerState ReadPlayerState(RE::PlayerCharacter* a_player, bool a_sessionActive);
 }

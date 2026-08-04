@@ -124,7 +124,7 @@ namespace
 		const Game::Snapshot snapshot{
 			.quest = g_questResolver.Resolve(player),
 			.location = g_locationResolver.Resolve(player),
-			.player = Game::ReadPlayerState(player)
+			.player = Game::ReadPlayerState(player, g_stateMachine.IsSessionActive())
 		};
 
 		auto activity = Presence::NormalizeActivity(g_stateMachine.Update(snapshot, g_startTimestamp, now));
