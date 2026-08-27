@@ -47,6 +47,15 @@ target(plugin_name, function()
         plugin_template = "res/commonlibf4-plugin.cpp.in"
     })
 
+    -- a dev mod folder is named for the mod manager, not the plugin, so it can't come from XSE_FO4_MODS_PATH
+    -- set in on_config to land after the plugin rule's own installdir assignment
+    local deploy = os.getenv("FO4_DEV_DEPLOY")
+    if deploy then
+        on_config(function(target)
+            target:set("installdir", deploy)
+        end)
+    end
+
     -- add src files
     add_files("src/**.cpp")
     add_headerfiles("src/**.h")

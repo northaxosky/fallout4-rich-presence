@@ -46,8 +46,13 @@ environment variables, whichever is set first:
 
 | Variable | Meaning |
 | --- | --- |
+| `FO4_DEV_DEPLOY` | An exact destination directory, used verbatim. Takes precedence over both variables below. |
 | `XSE_FO4_MODS_PATH` | A mod manager's mods directory. The plugin installs into its own mod folder. |
 | `XSE_FO4_GAME_PATH` | The Fallout 4 install directory. The plugin installs into `Data`. |
+
+Use `FO4_DEV_DEPLOY` for an existing mod folder whose name is not the plugin's, such as a mod
+manager's development mod. The other two variables derive a subdirectory from the plugin name,
+so they cannot target one.
 
 Release archives include a FOMOD installer. Install the archive with a mod manager and choose
 exactly one configuration preset. For a manual installation, copy the DLL and one file from
