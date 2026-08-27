@@ -70,15 +70,15 @@ exactly one configuration preset. For a manual installation, copy the DLL and on
 | Assets | `sAssetCharacterCreation` | `"fallout4"` | Large image during character creation. |
 | Assets | `sAssetPlayer` | `"vaultboy"` | Small image beside player information. |
 | Assets | `sAssetCombat` | `"vaultboy"` | Small image while in combat. |
-
-An asset key may be empty to show no image for that slot. A small image identical to the large
-image is suppressed, so a single uploaded asset renders one icon rather than a duplicated badge;
-upload distinct art and the badge appears with no configuration change.
 | Format | `sDetails` | `"{quest}"` | In-game details line. |
 | Format | `sState` | `"{location} - {worldspace}"` | In-game state line. |
 | Format | `sLargeText` | `"{objective}"` | In-game large-image tooltip. |
 | Format | `sSmallText` | `"{name} - Level {level}"` | Normal in-game small-image tooltip. |
 | Format | `sCombatSmallText` | `"{state}"` | Combat small-image tooltip. |
+
+An asset key may be empty to show no image for that slot. A small image identical to the large
+image is suppressed, so a single uploaded asset renders one icon rather than a duplicated badge;
+upload distinct art and the badge appears with no configuration change.
 
 Override `sApplicationID` only to point the mod at your own registered Discord application, for
 example to ship different artwork with a modlist.
