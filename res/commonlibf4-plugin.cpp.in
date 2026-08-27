@@ -13,7 +13,8 @@ F4SE_PLUGIN_VERSION = []() noexcept {
 	v.CompatibleVersions({
 		F4SE::RUNTIME_1_10_163,
 		F4SE::RUNTIME_1_10_984,
-		F4SE::RUNTIME_1_11_221
+		F4SE::RUNTIME_1_11_221,
+		F4SE::RUNTIME_1_11_240
 	});
 	return v;
 }();

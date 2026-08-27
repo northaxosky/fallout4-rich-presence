@@ -9,7 +9,7 @@ Discord Rich Presence for Fallout 4, as an F4SE plugin.
 - [xmake](https://xmake.io/) 3.0 or newer
 - Visual Studio 2022 with the Desktop development with C++ workload
 
-Supported runtimes: 1.10.163, 1.10.984, 1.11.221.
+Supported runtimes: 1.10.163, 1.10.984, 1.11.221, 1.11.240.
 
 ## Building
 

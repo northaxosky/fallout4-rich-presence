@@ -230,7 +230,8 @@ namespace Game::Tick
 	{
 		return a_runtime == F4SE::RUNTIME_1_10_163 ||
 		       a_runtime == F4SE::RUNTIME_1_10_984 ||
-		       a_runtime == F4SE::RUNTIME_1_11_221;
+		       a_runtime == F4SE::RUNTIME_1_11_221 ||
+		       a_runtime == F4SE::RUNTIME_1_11_240;
 	}
 
 	bool Install(const REL::Version& a_runtime)
