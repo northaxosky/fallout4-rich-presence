@@ -120,7 +120,7 @@ namespace Host
 				[setting] { return setting->GetValue(); },
 				[setting, afterSet = std::move(a_afterSet)](T a_value) {
 					setting->SetValue(std::move(a_value));
-					Config::Rebuild();
+					Config::Rebuild(Config::Validation::kQuiet);
 					if (afterSet)
 					{
 						afterSet();
@@ -160,7 +160,7 @@ namespace Host
 						static_cast<std::int64_t>(std::numeric_limits<std::int32_t>::min()),
 						static_cast<std::int64_t>(std::numeric_limits<std::int32_t>::max()));
 					setting->SetValue(static_cast<std::int32_t>(value));
-					Config::Rebuild();
+					Config::Rebuild(Config::Validation::kQuiet);
 					return static_cast<std::int64_t>(setting->GetValue());
 				});
 			descriptor.applyTiming = dmui::SettingApplyTiming::kImmediate;
@@ -241,6 +241,9 @@ namespace Host
 
 		void ApplySettings()
 		{
+			// the quiet live path leaves invalid text in place; correct it before it reaches disk
+			Config::Rebuild(Config::Validation::kStrict);
+			Logging::Configure();
 			if (Config::SaveOverrides())
 			{
 				CaptureSavedValues();

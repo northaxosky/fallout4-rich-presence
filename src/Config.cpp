@@ -75,31 +75,42 @@ namespace
 		std::make_shared<const Config::Snapshot>()
 	};
 
-	[[nodiscard]] std::string LoadAssetKey(REX::TTomlSetting<std::string>& a_setting, Presence::Asset a_asset, std::string_view a_name)
+	[[nodiscard]] std::string ResolveAssetKey(
+		REX::TTomlSetting<std::string>& a_setting,
+		Presence::Asset                 a_asset,
+		std::string_view                a_name,
+		std::string_view                a_previous,
+		Config::Validation              a_validation)
 	{
 		auto value = a_setting.GetValue();
+		if (Presence::IsValidAssetKey(value))
+		{
+			return value;
+		}
+
+		if (a_validation == Config::Validation::kQuiet)
+		{
+			return std::string{ a_previous };
+		}
+
+		// the installed preset is the user's chosen baseline, so prefer it over the compiled-in key
+		value = a_setting.GetValueDefault();
 		if (!Presence::IsValidAssetKey(value))
 		{
 			value = Presence::DefaultAssetKey(a_asset);
-			a_setting.SetValue(value);
-			REX::WARN("Assets.{} must be up to 32 lowercase ASCII letters, digits, or underscores, or empty for no image; using \"{}\"", a_name, value);
 		}
+
+		a_setting.SetValue(value);
+		REX::WARN("Assets.{} must be up to 32 lowercase ASCII letters, digits, or underscores, or empty for no image; using \"{}\"", a_name, value);
 		return value;
 	}
 
-	[[nodiscard]] Presence::FormatTemplate CompileDefaultTemplate(std::string_view a_default, std::string_view a_name)
-	{
-		auto result = Presence::FormatTemplate::Compile(a_default);
-		if (result)
-		{
-			return std::move(*result);
-		}
-
-		REX::ERROR("Compiled-in default Format.{} is invalid at byte {} ({}); field disabled", a_name, result.error().position, result.error().message);
-		return {};
-	}
-
-	[[nodiscard]] Presence::FormatTemplate LoadTemplate(REX::TTomlSetting<std::string>& a_setting, std::string_view a_default, std::string_view a_name)
+	[[nodiscard]] Presence::FormatTemplate ResolveTemplate(
+		REX::TTomlSetting<std::string>& a_setting,
+		std::string_view                a_default,
+		std::string_view                a_name,
+		const Presence::FormatTemplate& a_previous,
+		Config::Validation              a_validation)
 	{
 		auto result = Presence::FormatTemplate::Compile(a_setting.GetValue());
 		if (result)
@@ -107,9 +118,30 @@ namespace
 			return std::move(*result);
 		}
 
-		REX::WARN("Format.{} is invalid at byte {} ({}); using compiled-in default", a_name, result.error().position, result.error().message);
-		a_setting.SetValue(std::string{ a_default });
-		return CompileDefaultTemplate(a_default, a_name);
+		// every prefix of "{quest}" is invalid, so a keystroke must not discard the last good template
+		if (a_validation == Config::Validation::kQuiet)
+		{
+			return a_previous;
+		}
+
+		REX::WARN("Format.{} is invalid at byte {} ({}); using the installed preset", a_name, result.error().position, result.error().message);
+
+		auto fallback = a_setting.GetValueDefault();
+		auto compiled = Presence::FormatTemplate::Compile(fallback);
+		if (!compiled)
+		{
+			fallback = std::string{ a_default };
+			compiled = Presence::FormatTemplate::Compile(fallback);
+		}
+
+		a_setting.SetValue(fallback);
+		if (compiled)
+		{
+			return std::move(*compiled);
+		}
+
+		REX::ERROR("Compiled-in default Format.{} is invalid; field disabled", a_name);
+		return {};
 	}
 
 	void RemoveSetting(toml::value& a_output, std::string_view a_section, std::string_view a_key)
@@ -190,32 +222,36 @@ namespace Config
 		Rebuild();
 	}
 
-	void Rebuild()
+	void Rebuild(Validation a_validation)
 	{
 		if (iSamplingIntervalMs.GetValue() <= 0)
 		{
-			REX::WARN("iSamplingIntervalMs must be positive; using {}", kDefaultSamplingInterval.count());
+			if (a_validation == Validation::kStrict)
+			{
+				REX::WARN("iSamplingIntervalMs must be positive; using {}", kDefaultSamplingInterval.count());
+			}
 			iSamplingIntervalMs.SetValue(static_cast<std::int32_t>(kDefaultSamplingInterval.count()));
 		}
 
-		auto snapshot = std::make_shared<Snapshot>();
+		const auto previous = Current();
+		auto       snapshot = std::make_shared<Snapshot>();
 		snapshot->samplingInterval = std::chrono::milliseconds{ iSamplingIntervalMs.GetValue() };
 		snapshot->debugLogging = bDebugLogging.GetValue();
 		snapshot->showPlayerName = bShowPlayerName.GetValue();
 		snapshot->showQuest = bShowQuest.GetValue();
 		snapshot->showLocation = bShowLocation.GetValue();
 		snapshot->showExactLocation = bShowExactLocation.GetValue();
-		snapshot->assetKeys[AssetIndex(Presence::Asset::kFallout4)] = LoadAssetKey(sAssetDefault, Presence::Asset::kFallout4, "sAssetDefault"sv);
-		snapshot->assetKeys[AssetIndex(Presence::Asset::kMainMenu)] = LoadAssetKey(sAssetMainMenu, Presence::Asset::kMainMenu, "sAssetMainMenu"sv);
-		snapshot->assetKeys[AssetIndex(Presence::Asset::kLoading)] = LoadAssetKey(sAssetLoading, Presence::Asset::kLoading, "sAssetLoading"sv);
-		snapshot->assetKeys[AssetIndex(Presence::Asset::kCharacterCreation)] = LoadAssetKey(sAssetCharacterCreation, Presence::Asset::kCharacterCreation, "sAssetCharacterCreation"sv);
-		snapshot->assetKeys[AssetIndex(Presence::Asset::kPlayer)] = LoadAssetKey(sAssetPlayer, Presence::Asset::kPlayer, "sAssetPlayer"sv);
-		snapshot->assetKeys[AssetIndex(Presence::Asset::kCombat)] = LoadAssetKey(sAssetCombat, Presence::Asset::kCombat, "sAssetCombat"sv);
-		snapshot->details = LoadTemplate(sDetails, kDefaultDetailsTemplate, "sDetails"sv);
-		snapshot->state = LoadTemplate(sState, kDefaultStateTemplate, "sState"sv);
-		snapshot->largeText = LoadTemplate(sLargeText, kDefaultLargeTextTemplate, "sLargeText"sv);
-		snapshot->smallText = LoadTemplate(sSmallText, kDefaultSmallTextTemplate, "sSmallText"sv);
-		snapshot->combatSmallText = LoadTemplate(sCombatSmallText, kDefaultCombatSmallTextTemplate, "sCombatSmallText"sv);
+		snapshot->assetKeys[AssetIndex(Presence::Asset::kFallout4)] = ResolveAssetKey(sAssetDefault, Presence::Asset::kFallout4, "sAssetDefault"sv, previous->GetAssetKey(Presence::Asset::kFallout4), a_validation);
+		snapshot->assetKeys[AssetIndex(Presence::Asset::kMainMenu)] = ResolveAssetKey(sAssetMainMenu, Presence::Asset::kMainMenu, "sAssetMainMenu"sv, previous->GetAssetKey(Presence::Asset::kMainMenu), a_validation);
+		snapshot->assetKeys[AssetIndex(Presence::Asset::kLoading)] = ResolveAssetKey(sAssetLoading, Presence::Asset::kLoading, "sAssetLoading"sv, previous->GetAssetKey(Presence::Asset::kLoading), a_validation);
+		snapshot->assetKeys[AssetIndex(Presence::Asset::kCharacterCreation)] = ResolveAssetKey(sAssetCharacterCreation, Presence::Asset::kCharacterCreation, "sAssetCharacterCreation"sv, previous->GetAssetKey(Presence::Asset::kCharacterCreation), a_validation);
+		snapshot->assetKeys[AssetIndex(Presence::Asset::kPlayer)] = ResolveAssetKey(sAssetPlayer, Presence::Asset::kPlayer, "sAssetPlayer"sv, previous->GetAssetKey(Presence::Asset::kPlayer), a_validation);
+		snapshot->assetKeys[AssetIndex(Presence::Asset::kCombat)] = ResolveAssetKey(sAssetCombat, Presence::Asset::kCombat, "sAssetCombat"sv, previous->GetAssetKey(Presence::Asset::kCombat), a_validation);
+		snapshot->details = ResolveTemplate(sDetails, kDefaultDetailsTemplate, "sDetails"sv, previous->details, a_validation);
+		snapshot->state = ResolveTemplate(sState, kDefaultStateTemplate, "sState"sv, previous->state, a_validation);
+		snapshot->largeText = ResolveTemplate(sLargeText, kDefaultLargeTextTemplate, "sLargeText"sv, previous->largeText, a_validation);
+		snapshot->smallText = ResolveTemplate(sSmallText, kDefaultSmallTextTemplate, "sSmallText"sv, previous->smallText, a_validation);
+		snapshot->combatSmallText = ResolveTemplate(sCombatSmallText, kDefaultCombatSmallTextTemplate, "sCombatSmallText"sv, previous->combatSmallText, a_validation);
 		g_current.store(std::move(snapshot), std::memory_order_release);
 	}
 
@@ -233,7 +269,8 @@ namespace Config
 	{
 		try
 		{
-			toml::value output{};
+			// toml11 default-constructs to an empty (non-table) value whose as_table() throws
+			toml::value output{ toml::table{} };
 			if (std::filesystem::exists(kCustomPath))
 			{
 				auto result = toml::try_parse(kCustomPath.data());

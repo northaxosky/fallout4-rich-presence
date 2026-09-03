@@ -62,8 +62,15 @@ namespace Config
 		[[nodiscard]] std::string_view GetAssetKey(Presence::Asset a_asset) const noexcept;
 	};
 
+	// a live edit is transient, so it must not warn or rewrite the value the user is still typing
+	enum class Validation : std::uint8_t
+	{
+		kQuiet,
+		kStrict
+	};
+
 	void Load();
-	void Rebuild();
+	void Rebuild(Validation a_validation = Validation::kStrict);
 
 	[[nodiscard]] std::shared_ptr<const Snapshot> Current() noexcept;
 	[[nodiscard]] std::string                     GetApplicationID();
