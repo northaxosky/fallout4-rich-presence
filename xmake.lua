@@ -6,6 +6,9 @@ local plugin_name = "Fallout4RichPresence"
 local plugin_version = "0.1.0"
 local plugin_version_major, plugin_version_minor, plugin_version_patch = plugin_version:match("^(%d+)%.(%d+)%.(%d+)$")
 
+-- mod manager folder for xmake install, joined onto FO4_DEV_MODS
+local dev_mod_folder = "Discord Rich Presence - Dev"
+
 -- set project constants
 set_project(plugin_name)
 set_version(plugin_version)
@@ -49,12 +52,13 @@ target(plugin_name, function()
 
     -- a dev mod folder is named for the mod manager, not the plugin, so it can't come from XSE_FO4_MODS_PATH
     -- set in on_config to land after the plugin rule's own installdir assignment
-    local deploy = os.getenv("FO4_DEV_DEPLOY")
-    if deploy then
-        on_config(function(target)
-            target:set("installdir", deploy)
-        end)
-    end
+    on_config(function(target)
+        local mods_root = os.getenv("FO4_DEV_MODS")
+
+        if mods_root then
+            target:set("installdir", path.join(mods_root, dev_mod_folder))
+        end
+    end)
 
     -- add src files
     add_files("src/**.cpp")
