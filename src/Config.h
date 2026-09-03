@@ -19,6 +19,9 @@ namespace Presence
 namespace Config
 {
 	inline constexpr auto             kDefaultSamplingInterval = std::chrono::milliseconds{ 500 };
+	inline constexpr std::int32_t     kDefaultMarkerMaxDistance = 16384;
+	inline constexpr std::int32_t     kMinimumMarkerMaxDistance = 1;
+	inline constexpr std::int32_t     kMaximumMarkerMaxDistance = 131072;
 	inline constexpr std::string_view kDefaultDetailsTemplate = "{quest}";
 	inline constexpr std::string_view kDefaultStateTemplate = "{location} - {worldspace}";
 	inline constexpr std::string_view kDefaultLargeTextTemplate = "{objective}";
@@ -32,6 +35,8 @@ namespace Config
 	extern REX::TTomlSetting<bool>         bShowLocation;
 	extern REX::TTomlSetting<bool>         bShowExactLocation;
 	extern REX::TTomlSetting<std::string>  sApplicationID;
+	extern REX::TTomlSetting<bool>         bMarkerArtwork;
+	extern REX::TTomlSetting<std::int32_t> iMarkerMaxDistance;
 	extern REX::TTomlSetting<std::string>  sAssetDefault;
 	extern REX::TTomlSetting<std::string>  sAssetMainMenu;
 	extern REX::TTomlSetting<std::string>  sAssetLoading;
@@ -52,6 +57,8 @@ namespace Config
 		bool                       showQuest{ true };
 		bool                       showLocation{ true };
 		bool                       showExactLocation{ true };
+		bool                       markerArtwork{ true };
+		std::int32_t               markerMaxDistance{ kDefaultMarkerMaxDistance };
 		std::array<std::string, 6> assetKeys{};
 		Presence::FormatTemplate   details{};
 		Presence::FormatTemplate   state{};

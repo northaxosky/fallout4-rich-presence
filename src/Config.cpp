@@ -31,6 +31,12 @@ namespace Config
 	REX::TTomlSetting<bool>        bShowExactLocation{ "Privacy"sv, "bShowExactLocation"sv, true };
 	REX::TTomlSetting<std::string> sApplicationID{ "Discord"sv, "sApplicationID"sv, "1533687297684537374" };
 
+	REX::TTomlSetting<bool>         bMarkerArtwork{ "Assets"sv, "bMarkerArtwork"sv, true };
+	REX::TTomlSetting<std::int32_t> iMarkerMaxDistance{
+		"Assets"sv,
+		"iMarkerMaxDistance"sv,
+		kDefaultMarkerMaxDistance
+	};
 	REX::TTomlSetting<std::string> sAssetDefault{ "Assets"sv, "sAssetDefault"sv, std::string{ Presence::DefaultAssetKey(Presence::Asset::kFallout4) } };
 	REX::TTomlSetting<std::string> sAssetMainMenu{ "Assets"sv, "sAssetMainMenu"sv, std::string{ Presence::DefaultAssetKey(Presence::Asset::kMainMenu) } };
 	REX::TTomlSetting<std::string> sAssetLoading{ "Assets"sv, "sAssetLoading"sv, std::string{ Presence::DefaultAssetKey(Presence::Asset::kLoading) } };
@@ -233,6 +239,22 @@ namespace Config
 			iSamplingIntervalMs.SetValue(static_cast<std::int32_t>(kDefaultSamplingInterval.count()));
 		}
 
+		const auto markerMaxDistance = std::clamp(
+			iMarkerMaxDistance.GetValue(),
+			kMinimumMarkerMaxDistance,
+			kMaximumMarkerMaxDistance);
+		if (markerMaxDistance != iMarkerMaxDistance.GetValue())
+		{
+			if (a_validation == Validation::kStrict)
+			{
+				REX::WARN("iMarkerMaxDistance must be between {} and {}; using {}",
+					kMinimumMarkerMaxDistance,
+					kMaximumMarkerMaxDistance,
+					markerMaxDistance);
+			}
+			iMarkerMaxDistance.SetValue(markerMaxDistance);
+		}
+
 		const auto previous = Current();
 		auto       snapshot = std::make_shared<Snapshot>();
 		snapshot->samplingInterval = std::chrono::milliseconds{ iSamplingIntervalMs.GetValue() };
@@ -241,6 +263,8 @@ namespace Config
 		snapshot->showQuest = bShowQuest.GetValue();
 		snapshot->showLocation = bShowLocation.GetValue();
 		snapshot->showExactLocation = bShowExactLocation.GetValue();
+		snapshot->markerArtwork = bMarkerArtwork.GetValue();
+		snapshot->markerMaxDistance = iMarkerMaxDistance.GetValue();
 		snapshot->assetKeys[AssetIndex(Presence::Asset::kFallout4)] = ResolveAssetKey(sAssetDefault, Presence::Asset::kFallout4, "sAssetDefault"sv, previous->GetAssetKey(Presence::Asset::kFallout4), a_validation);
 		snapshot->assetKeys[AssetIndex(Presence::Asset::kMainMenu)] = ResolveAssetKey(sAssetMainMenu, Presence::Asset::kMainMenu, "sAssetMainMenu"sv, previous->GetAssetKey(Presence::Asset::kMainMenu), a_validation);
 		snapshot->assetKeys[AssetIndex(Presence::Asset::kLoading)] = ResolveAssetKey(sAssetLoading, Presence::Asset::kLoading, "sAssetLoading"sv, previous->GetAssetKey(Presence::Asset::kLoading), a_validation);
@@ -289,6 +313,8 @@ namespace Config
 			WriteOverride(output, bShowLocation, "Privacy"sv, "bShowLocation"sv);
 			WriteOverride(output, bShowExactLocation, "Privacy"sv, "bShowExactLocation"sv);
 			WriteOverride(output, sApplicationID, "Discord"sv, "sApplicationID"sv);
+			WriteOverride(output, bMarkerArtwork, "Assets"sv, "bMarkerArtwork"sv);
+			WriteOverride(output, iMarkerMaxDistance, "Assets"sv, "iMarkerMaxDistance"sv);
 			WriteOverride(output, sAssetDefault, "Assets"sv, "sAssetDefault"sv);
 			WriteOverride(output, sAssetMainMenu, "Assets"sv, "sAssetMainMenu"sv);
 			WriteOverride(output, sAssetLoading, "Assets"sv, "sAssetLoading"sv);

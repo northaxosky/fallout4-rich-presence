@@ -40,6 +40,8 @@ namespace Host
 			kShowLocation,
 			kShowExactLocation,
 			kApplicationID,
+			kMarkerArtwork,
+			kMarkerMaxDistance,
 			kAssetDefault,
 			kAssetMainMenu,
 			kAssetLoading,
@@ -85,6 +87,9 @@ namespace Host
 			CaptureValue(SettingSlot::kShowLocation, Config::bShowLocation);
 			CaptureValue(SettingSlot::kShowExactLocation, Config::bShowExactLocation);
 			CaptureValue(SettingSlot::kApplicationID, Config::sApplicationID);
+			CaptureValue(SettingSlot::kMarkerArtwork, Config::bMarkerArtwork);
+			g_savedValues[SlotIndex(SettingSlot::kMarkerMaxDistance)] =
+				static_cast<std::int64_t>(Config::iMarkerMaxDistance.GetValue());
 			CaptureValue(SettingSlot::kAssetDefault, Config::sAssetDefault);
 			CaptureValue(SettingSlot::kAssetMainMenu, Config::sAssetMainMenu);
 			CaptureValue(SettingSlot::kAssetLoading, Config::sAssetLoading);
@@ -174,6 +179,43 @@ namespace Host
 			return descriptor;
 		}
 
+		[[nodiscard]] dmui::SettingDescriptor MakeMarkerMaxDistance()
+		{
+			auto* const             setting = &Config::iMarkerMaxDistance;
+			dmui::SettingDescriptor descriptor;
+			descriptor.id = "iMarkerMaxDistance";
+			descriptor.label = "Marker maximum distance";
+			descriptor.description = "Maximum game-unit distance for nearest discovered marker artwork and interior location fallback.";
+			descriptor.control = dmui::SignedSettingControl{
+				.range = dmui::NumericSettingRange<std::int64_t>{
+					.minimum = Config::kMinimumMarkerMaxDistance,
+					.maximum = Config::kMaximumMarkerMaxDistance },
+				.format = "%lld units",
+				.dragSpeed = 256.0f
+			};
+			descriptor.defaultValue = static_cast<std::int64_t>(setting->GetValueDefault());
+			descriptor.binding = dmui::BindSetting(
+				[setting] { return static_cast<std::int64_t>(setting->GetValue()); },
+				[setting](std::int64_t a_value) {
+					const auto value = std::clamp(
+						a_value,
+						static_cast<std::int64_t>(std::numeric_limits<std::int32_t>::min()),
+						static_cast<std::int64_t>(std::numeric_limits<std::int32_t>::max()));
+					setting->SetValue(static_cast<std::int32_t>(value));
+					Config::Rebuild(Config::Validation::kQuiet);
+					return static_cast<std::int64_t>(setting->GetValue());
+				});
+			descriptor.applyTiming = dmui::SettingApplyTiming::kImmediate;
+			descriptor.isDirty = [setting] {
+				return dmui::SettingValue{ static_cast<std::int64_t>(setting->GetValue()) } !=
+				       g_savedValues[SlotIndex(SettingSlot::kMarkerMaxDistance)];
+			};
+			descriptor.isModified = [setting] {
+				return setting->GetValue() != setting->GetValueDefault();
+			};
+			return descriptor;
+		}
+
 		[[nodiscard]] dmui::SettingDescriptor MakeReadOnly(
 			std::string_view      a_id,
 			std::string_view      a_label,
@@ -220,6 +262,8 @@ namespace Host
 			RestoreDefault(Config::bShowLocation);
 			RestoreDefault(Config::bShowExactLocation);
 			RestoreDefault(Config::sApplicationID);
+			RestoreDefault(Config::bMarkerArtwork);
+			RestoreDefault(Config::iMarkerMaxDistance);
 			RestoreDefault(Config::sAssetDefault);
 			RestoreDefault(Config::sAssetMainMenu);
 			RestoreDefault(Config::sAssetLoading);
@@ -358,54 +402,64 @@ namespace Host
 
 		[[nodiscard]] dmui::SettingGroup MakeAssetsGroup()
 		{
-			const auto control = dmui::TextSettingControl{
+			const auto checkbox = dmui::CheckboxSettingControl{};
+			const auto text = dmui::TextSettingControl{
 				.bufferCapacity = Presence::kActivityAssetKeyLimit + 1
 			};
 			dmui::SettingGroup group;
 			group.id = "assets";
 			group.label = "Assets";
 			group.settings.push_back(MakeSetting(
+				SettingSlot::kMarkerArtwork,
+				"bMarkerArtwork",
+				"Marker artwork",
+				"Uses the nearest discovered map marker as the gameplay image when location sharing is enabled.",
+				Config::bMarkerArtwork,
+				checkbox,
+				dmui::SettingApplyTiming::kImmediate));
+			group.settings.push_back(MakeMarkerMaxDistance());
+			group.settings.push_back(MakeSetting(
 				SettingSlot::kAssetDefault,
 				"sAssetDefault",
 				"Gameplay image",
 				kAssetDescription,
 				Config::sAssetDefault,
-				control));
+				text));
 			group.settings.push_back(MakeSetting(
 				SettingSlot::kAssetMainMenu,
 				"sAssetMainMenu",
 				"Main menu image",
 				kAssetDescription,
 				Config::sAssetMainMenu,
-				control));
+				text));
 			group.settings.push_back(MakeSetting(
 				SettingSlot::kAssetLoading,
 				"sAssetLoading",
 				"Loading image",
 				kAssetDescription,
 				Config::sAssetLoading,
-				control));
+				text));
 			group.settings.push_back(MakeSetting(
 				SettingSlot::kAssetCharacterCreation,
 				"sAssetCharacterCreation",
 				"Character creation image",
 				kAssetDescription,
 				Config::sAssetCharacterCreation,
-				control));
+				text));
 			group.settings.push_back(MakeSetting(
 				SettingSlot::kAssetPlayer,
 				"sAssetPlayer",
 				"Player image",
 				kAssetDescription,
 				Config::sAssetPlayer,
-				control));
+				text));
 			group.settings.push_back(MakeSetting(
 				SettingSlot::kAssetCombat,
 				"sAssetCombat",
 				"Combat image",
 				kAssetDescription,
 				Config::sAssetCombat,
-				control));
+				text));
 			return group;
 		}
 

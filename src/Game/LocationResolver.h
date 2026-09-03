@@ -2,14 +2,18 @@
 
 #include <cstdint>
 #include <string>
+#include <string_view>
 
 namespace RE
 {
 	class PlayerCharacter;
+	class TESWorldSpace;
 }
 
 namespace Game
 {
+	[[nodiscard]] RE::TESWorldSpace* ReadWorldspace(RE::PlayerCharacter& a_player) noexcept;
+
 	struct LocationDetails
 	{
 		std::string location;
@@ -21,7 +25,7 @@ namespace Game
 	class LocationResolver
 	{
 	public:
-		[[nodiscard]] LocationDetails Resolve(RE::PlayerCharacter* a_player);
+		[[nodiscard]] LocationDetails Resolve(RE::PlayerCharacter* a_player, std::string_view a_nearestMarkerName = {});
 
 		void Invalidate();
 

@@ -15,6 +15,7 @@ namespace Game::Tick
 
 	[[nodiscard]] Presence::Mailbox& GetMailbox() noexcept;
 	void                             BeginSession() noexcept;
+	void                             BuildMarkerCache();
 	void                             InvalidateCaches();
 	void                             ResetElapsedEpoch() noexcept;
 }

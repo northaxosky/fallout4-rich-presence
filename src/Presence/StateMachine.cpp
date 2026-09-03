@@ -4,6 +4,7 @@
 #include "Game/Snapshot.h"
 #include "Presence/AssetKeys.h"
 #include "Presence/FormatTemplate.h"
+#include "Presence/MarkerAssets.h"
 #include "Presence/StateMachine.h"
 
 #include <string>
@@ -151,6 +152,14 @@ namespace Presence
 	{
 		Activity activity;
 		activity.largeImage = a_config.GetAssetKey(Asset::kFallout4);
+		if (a_config.showLocation && a_config.markerArtwork && a_snapshot.markerType)
+		{
+			const auto markerKey = MarkerAssetKey(*a_snapshot.markerType);
+			if (!markerKey.empty())
+			{
+				activity.largeImage = markerKey;
+			}
+		}
 		activity.startTimestamp = a_startTimestamp;
 
 		const auto showName = a_config.showPlayerName && a_nameTrusted;

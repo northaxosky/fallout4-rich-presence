@@ -25,8 +25,8 @@ xmake build
 ```
 
 The plugin builds to `build/windows/x64/release/Fallout4RichPresence.dll`.
-Run the format-template tests with `xmake build FormatTemplateTests` followed by
-`xmake run FormatTemplateTests`.
+Run the unit tests with `xmake build FormatTemplateTests MarkerAssetTests`, followed by
+`xmake run FormatTemplateTests` and `xmake run MarkerAssetTests`.
 
 ## Packaging
 
@@ -68,6 +68,8 @@ exactly one configuration preset. For a manual installation, copy the DLL and on
 | Privacy | `bShowLocation` | `true` | Makes `{worldspace}` available and permits location data. |
 | Privacy | `bShowExactLocation` | `true` | Makes `{location}` available when location data is permitted. |
 | Discord | `sApplicationID` | `"1533687297684537374"` | Discord application ID. |
+| Assets | `bMarkerArtwork` | `true` | Uses nearby discovered map-marker artwork during gameplay. |
+| Assets | `iMarkerMaxDistance` | `16384` | Maximum game-unit distance for marker artwork and interior location fallback. |
 | Assets | `sAssetDefault` | `"fallout4"` | Large image during normal gameplay. |
 | Assets | `sAssetMainMenu` | `"mainmenu"` | Large image at the main menu. |
 | Assets | `sAssetLoading` | `"fallout4"` | Large image while loading. |
@@ -83,6 +85,14 @@ exactly one configuration preset. For a manual installation, copy the DLL and on
 An asset key may be empty to show no image for that slot. A small image identical to the large
 image is suppressed, so a single uploaded asset renders one icon rather than a duplicated badge;
 upload distinct art and the badge appears with no configuration change.
+
+During gameplay, marker artwork uses the nearest discovered Pip-Boy map marker within
+`iMarkerMaxDistance`. It is disabled when either `bMarkerArtwork` or `bShowLocation` is false,
+because the selected art communicates location. Marker types without curated art fall back to
+`sAssetDefault`. Main-menu, loading, and character-creation art is
+unchanged. When an interior has no authored location name, the location line can fall back to the
+nearest discovered exterior marker name while preserving the existing exact-location privacy
+setting.
 
 Override `sApplicationID` only to point the mod at your own registered Discord application, for
 example to ship different artwork with a modlist.
@@ -106,7 +116,7 @@ the installed preset and saves the result.
 | Preset | Gameplay text |
 | --- | --- |
 | Default | Quest, objective, location, worldspace, and level; player name hidden. |
-| Spoiler-free | Worldspace and level; quest, objective, exact location, and player name hidden. |
+| Spoiler-free | Worldspace and level; quest, objective, exact location, player name, and marker artwork hidden. |
 | Full | Quest, objective, location, worldspace, player name, and level. |
 | Minimal | Level only. |
 
@@ -148,6 +158,20 @@ Restore the 500 ms sampling interval and disable debug logging after testing.
 Upload one Rich Presence image under the key `fallout4`; every asset slot uses it by default.
 Custom artwork can use a different configured key for each slot. Keys must contain 1-32 lowercase
 ASCII letters, digits, or underscores. Invalid configured keys fall back to `fallout4`.
+
+For all curated map-marker artwork, upload images under these keys:
+
+`marker_bos`, `marker_bunkerhill`, `marker_castle`, `marker_cave`, `marker_church`,
+`marker_city`, `marker_diamondcity`, `marker_drivein`, `marker_farm`,
+`marker_fillingstation`, `marker_goodneighbor`, `marker_graveyard`, `marker_hospital`,
+`marker_industrial`, `marker_institute`, `marker_junkyard`, `marker_metro`,
+`marker_militarybase`, `marker_minutemen`, `marker_policestation`, `marker_prydwen`,
+`marker_radioactive`, `marker_radiotower`, `marker_railroad`, `marker_sanctuary`,
+`marker_school`, `marker_settlement`, `marker_vault`, and `marker_water`.
+
+Unmapped markers use the configured default gameplay image. Every mapped key above must be
+uploaded: Discord does not expose the application's asset inventory to the plugin, so a missing
+remote asset cannot be detected for client-side fallback and Discord renders no marker image.
 
 ## License
 

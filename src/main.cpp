@@ -23,6 +23,32 @@ namespace
 		       std::ranges::all_of(a_value, [](char a_character) { return a_character >= '0' && a_character <= '9'; });
 	}
 
+	void BuildMarkerCache() noexcept
+	{
+		try
+		{
+			Game::Tick::BuildMarkerCache();
+		}
+		catch (const std::exception& a_exception)
+		{
+			try
+			{
+				REX::ERROR("Map marker cache build failed: {}", a_exception.what());
+			}
+			catch (...)
+			{}
+		}
+		catch (...)
+		{
+			try
+			{
+				REX::ERROR("Map marker cache build failed");
+			}
+			catch (...)
+			{}
+		}
+	}
+
 	void F4SEAPI HandleF4SEMessage(F4SE::MessagingInterface::Message* a_message) noexcept
 	{
 		if (!a_message)
@@ -33,6 +59,12 @@ namespace
 		if (a_message->type == F4SE::MessagingInterface::kPostPostLoad)
 		{
 			Host::Connect();
+			return;
+		}
+
+		if (a_message->type == F4SE::MessagingInterface::kGameDataReady)
+		{
+			BuildMarkerCache();
 			return;
 		}
 

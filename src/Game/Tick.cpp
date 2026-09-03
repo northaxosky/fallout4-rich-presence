@@ -2,6 +2,7 @@
 
 #include "Config.h"
 #include "Game/LocationResolver.h"
+#include "Game/MarkerCache.h"
 #include "Game/PlayerState.h"
 #include "Game/QuestResolver.h"
 #include "Game/Snapshot.h"
@@ -54,6 +55,7 @@ namespace
 	TickState                g_tickState{};
 	Game::QuestResolver      g_questResolver{};
 	Game::LocationResolver   g_locationResolver{};
+	Game::MarkerCache        g_markerCache{};
 	Presence::Mailbox        g_mailbox{};
 	Presence::StateMachine   g_stateMachine{};
 	Presence::ActivityUpdate g_lastPublished{};
@@ -122,13 +124,20 @@ namespace
 		++g_tickState.tickCount;
 
 		const auto           player = RE::PlayerCharacter::GetSingleton();
+		const auto           marker = g_stateMachine.IsSessionActive() && config->showLocation ?
+		                                  g_markerCache.Resolve(
+											  player,
+											  static_cast<float>(config->markerMaxDistance)) :
+		                                  std::nullopt;
 		const Game::Snapshot snapshot{
 			.quest = g_questResolver.Resolve(player),
-			.location = g_locationResolver.Resolve(player),
-			.player = Game::ReadPlayerState(player, g_stateMachine.IsSessionActive())
+			.location = g_locationResolver.Resolve(player, marker ? std::string_view{ marker->name } : std::string_view{}),
+			.player = Game::ReadPlayerState(player, g_stateMachine.IsSessionActive()),
+			.markerType = marker ? std::optional{ std::to_underlying(marker->type) } : std::nullopt
 		};
 
-		auto activity = Presence::NormalizeActivity(g_stateMachine.Update(snapshot, *config, g_startTimestamp, now));
+		auto       activity = Presence::NormalizeActivity(g_stateMachine.Update(snapshot, *config, g_startTimestamp, now));
+		const auto chosenLargeImage = config->debugLogging && activity ? activity->largeImage : std::string{};
 		if (!g_stateMachine.IsHoldingActivity() &&
 			(!g_hasPublished || !(activity == g_lastPublished)))
 		{
@@ -143,7 +152,7 @@ namespace
 			return;
 		}
 
-		REX::DEBUG("#{} presence={} holding={} sessionActive={} quest='{}' objective='{}' priority={} location='{}' worldspace='{}' level={} combatRaw={} combatStable={} mainMenu={} loadingMenu={} looksMenu={} charGenFlag={} nameTrusted={}",
+		REX::DEBUG("#{} presence={} holding={} sessionActive={} quest='{}' objective='{}' priority={} location='{}' worldspace='{}' markerType={} largeImage='{}' level={} combatRaw={} combatStable={} mainMenu={} loadingMenu={} looksMenu={} charGenFlag={} nameTrusted={}",
 			g_tickState.tickCount,
 			Presence::ToString(g_stateMachine.GetState()),
 			g_stateMachine.IsHoldingActivity(),
@@ -153,6 +162,8 @@ namespace
 			static_cast<int>(snapshot.quest.priority),
 			snapshot.location.location,
 			snapshot.location.worldspace,
+			snapshot.markerType ? static_cast<int>(*snapshot.markerType) : -1,
+			chosenLargeImage,
 			snapshot.player.level,
 			snapshot.player.inCombat,
 			g_stateMachine.IsCombatActive(),
@@ -214,10 +225,16 @@ namespace Game::Tick
 		g_stateMachine.BeginSession();
 	}
 
+	void BuildMarkerCache()
+	{
+		g_markerCache.Build();
+	}
+
 	void InvalidateCaches()
 	{
 		g_questResolver.Invalidate();
 		g_locationResolver.Invalidate();
+		g_markerCache.Invalidate();
 	}
 
 	void ResetElapsedEpoch() noexcept

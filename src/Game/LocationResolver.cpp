@@ -34,9 +34,13 @@ namespace
 		return name;
 	}
 
-	[[nodiscard]] std::string ReadWorldspace(RE::PlayerCharacter& a_player)
+}
+
+namespace Game
+{
+	RE::TESWorldSpace* ReadWorldspace(RE::PlayerCharacter& a_player) noexcept
 	{
-		const RE::TESWorldSpace* worldspace = a_player.cachedWorldspace;
+		auto worldspace = a_player.cachedWorldspace;
 		if (!worldspace)
 		{
 			// the cell union holds tempDataOffset when interior, so the guard is required
@@ -47,12 +51,9 @@ namespace
 			}
 		}
 
-		return CopyName(worldspace);
+		return worldspace;
 	}
-}
 
-namespace Game
-{
 	void LocationResolver::Invalidate()
 	{
 		latched_ = {};
@@ -110,13 +111,20 @@ namespace Game
 		}
 	}
 
-	LocationDetails LocationResolver::Resolve(RE::PlayerCharacter* a_player)
+	LocationDetails LocationResolver::Resolve(RE::PlayerCharacter* a_player, std::string_view a_nearestMarkerName)
 	{
 		LocationDetails current;
 		if (a_player)
 		{
 			current.location = ReadLocation(*a_player);
-			current.worldspace = ReadWorldspace(*a_player);
+			current.worldspace = CopyName(ReadWorldspace(*a_player));
+			const auto cell = a_player->parentCell;
+			if (current.location.empty() &&
+				cell && cell->IsInterior() &&
+				!a_nearestMarkerName.empty())
+			{
+				current.location = a_nearestMarkerName;
+			}
 		}
 
 		if (!current.worldspace.empty() && current.worldspace == current.location)
