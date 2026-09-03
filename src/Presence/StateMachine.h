@@ -12,6 +12,11 @@ namespace Game
 	struct Snapshot;
 }
 
+namespace Config
+{
+	struct Snapshot;
+}
+
 namespace Presence
 {
 	enum class GameState : std::uint8_t
@@ -52,7 +57,7 @@ namespace Presence
 		inline static constexpr std::uint8_t kLoadingSampleThreshold = 2;
 
 		void                         BeginSession() noexcept;
-		[[nodiscard]] ActivityUpdate Update(const Game::Snapshot& a_snapshot, std::int64_t a_startTimestamp, Clock::time_point a_now);
+		[[nodiscard]] ActivityUpdate Update(const Game::Snapshot& a_snapshot, const Config::Snapshot& a_config, std::int64_t a_startTimestamp, Clock::time_point a_now);
 		[[nodiscard]] GameState      GetState() const noexcept { return state_; }
 		[[nodiscard]] bool           IsPlayerNameTrusted() const noexcept { return state_ != GameState::kCharacterCreation && !nameTrustedAt_; }
 		[[nodiscard]] bool           IsSessionActive() const noexcept { return sessionActive_; }
@@ -61,7 +66,7 @@ namespace Presence
 
 	private:
 		[[nodiscard]] GameState DetectState(const Game::Snapshot& a_snapshot);
-		[[nodiscard]] Activity  BuildInGame(const Game::Snapshot& a_snapshot, std::int64_t a_startTimestamp, bool a_nameTrusted) const;
+		[[nodiscard]] Activity  BuildInGame(const Game::Snapshot& a_snapshot, const Config::Snapshot& a_config, std::int64_t a_startTimestamp, bool a_nameTrusted) const;
 		void                    EndSession() noexcept;
 		void                    UpdateCombat(bool a_inCombat) noexcept;
 

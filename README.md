@@ -9,6 +9,10 @@ Discord Rich Presence for Fallout 4, as an F4SE plugin.
 - [xmake](https://xmake.io/) 3.0 or newer
 - Visual Studio 2022 with the Desktop development with C++ workload
 
+[DearModdingUI](https://github.com/Dear-Modding-FO4/DearModdingUI) is an optional soft
+dependency that provides the in-game settings page. Rich Presence works normally when it is not
+installed.
+
 Supported runtimes: 1.10.163, 1.10.984, 1.11.221, 1.11.240.
 
 ## Building
@@ -41,18 +45,13 @@ only the files above, so a `Fallout4RichPresenceCustom.toml` you keep there surv
 
 ## Installing
 
-`xmake install` copies the plugin into `F4SE/Plugins` under the path given by one of these
-environment variables, whichever is set first:
+`xmake install` copies the plugin into `F4SE/Plugins` under the first variable that is set:
 
-| Variable | Meaning |
+| Variable | Install root |
 | --- | --- |
-| `FO4_DEV_DEPLOY` | An exact destination directory, used verbatim. Takes precedence over both variables below. |
-| `XSE_FO4_MODS_PATH` | A mod manager's mods directory. The plugin installs into its own mod folder. |
-| `XSE_FO4_GAME_PATH` | The Fallout 4 install directory. The plugin installs into `Data`. |
-
-Use `FO4_DEV_DEPLOY` for an existing mod folder whose name is not the plugin's, such as a mod
-manager's development mod. The other two variables derive a subdirectory from the plugin name,
-so they cannot target one.
+| `FO4_DEV_MODS` | A mods root, plus `Discord Rich Presence - Dev`. |
+| `XSE_FO4_MODS_PATH` | A mods root, plus a folder named after the target. |
+| `XSE_FO4_GAME_PATH` | The Fallout 4 install directory, plus `Data`. |
 
 Release archives include a FOMOD installer. Install the archive with a mod manager and choose
 exactly one configuration preset. For a manual installation, copy the DLL and one file from
@@ -89,6 +88,18 @@ Override `sApplicationID` only to point the mod at your own registered Discord a
 example to ship different artwork with a modlist.
 `Fallout4RichPresence.toml` is replaced on reinstall, so put personal overrides in
 `Fallout4RichPresenceCustom.toml` next to it. Keys omitted there inherit the selected preset.
+When no overrides remain, the custom file is kept with only a short header comment.
+
+### In-game settings
+
+With DearModdingUI installed, open its menu and select **Rich Presence > Settings** to edit the
+same options in game and inspect the live Discord transport status. Sampling, privacy, format,
+asset, and logging changes apply immediately; changing `sApplicationID` requires restarting
+Fallout 4 because the Discord worker captures it at startup.
+
+Use **Apply** to persist edits. The page writes only values that differ from the installed preset
+to `Fallout4RichPresenceCustom.toml`, so they survive reinstalling the mod. **Reset all** restores
+the installed preset and saves the result.
 
 ### Presets
 

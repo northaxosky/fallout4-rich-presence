@@ -11,11 +11,15 @@
 
 namespace
 {
-	[[nodiscard]] Presence::Activity BuildFixedActivity(std::string_view a_details, Presence::Asset a_asset, std::int64_t a_startTimestamp = 0)
+	[[nodiscard]] Presence::Activity BuildFixedActivity(
+		std::string_view        a_details,
+		Presence::Asset         a_asset,
+		const Config::Snapshot& a_config,
+		std::int64_t            a_startTimestamp = 0)
 	{
 		Presence::Activity activity;
 		activity.details = a_details;
-		activity.largeImage = Config::GetAssetKey(a_asset);
+		activity.largeImage = a_config.GetAssetKey(a_asset);
 		activity.largeText = "Fallout 4";
 		activity.startTimestamp = a_startTimestamp;
 		return activity;
@@ -139,16 +143,20 @@ namespace Presence
 		}
 	}
 
-	Activity StateMachine::BuildInGame(const Game::Snapshot& a_snapshot, std::int64_t a_startTimestamp, bool a_nameTrusted) const
+	Activity StateMachine::BuildInGame(
+		const Game::Snapshot&   a_snapshot,
+		const Config::Snapshot& a_config,
+		std::int64_t            a_startTimestamp,
+		bool                    a_nameTrusted) const
 	{
 		Activity activity;
-		activity.largeImage = Config::GetAssetKey(Asset::kFallout4);
+		activity.largeImage = a_config.GetAssetKey(Asset::kFallout4);
 		activity.startTimestamp = a_startTimestamp;
 
-		const auto showName = Config::ShowPlayerName() && a_nameTrusted;
-		const auto showQuest = Config::ShowQuest();
-		const auto showLocation = Config::ShowLocation();
-		const auto showExactLocation = showLocation && Config::ShowExactLocation();
+		const auto showName = a_config.showPlayerName && a_nameTrusted;
+		const auto showQuest = a_config.showQuest;
+		const auto showLocation = a_config.showLocation;
+		const auto showExactLocation = showLocation && a_config.showExactLocation;
 		const auto level = a_snapshot.player.level > 0 ? std::to_string(a_snapshot.player.level) : std::string{};
 		const auto state = combatActive_ ? "In Combat"sv : "In Game"sv;
 
@@ -162,9 +170,9 @@ namespace Presence
 			.state = state
 		};
 
-		activity.details = Config::GetDetailsTemplate().Render(values);
-		activity.state = Config::GetStateTemplate().Render(values);
-		activity.largeText = Config::GetLargeTextTemplate().Render(values);
+		activity.details = a_config.details.Render(values);
+		activity.state = a_config.state.Render(values);
+		activity.largeText = a_config.largeText.Render(values);
 		if (activity.details.empty() && activity.state.empty())
 		{
 			activity.state = level.empty() ? "In Game" : "Level " + level;
@@ -172,15 +180,15 @@ namespace Presence
 
 		if (combatActive_)
 		{
-			activity.smallImage = Config::GetAssetKey(Asset::kCombat);
-			activity.smallText = Config::GetCombatSmallTextTemplate().Render(values);
+			activity.smallImage = a_config.GetAssetKey(Asset::kCombat);
+			activity.smallText = a_config.combatSmallText.Render(values);
 		}
 		else
 		{
-			activity.smallText = Config::GetSmallTextTemplate().Render(values);
+			activity.smallText = a_config.smallText.Render(values);
 			if (!activity.smallText.empty())
 			{
-				activity.smallImage = Config::GetAssetKey(Asset::kPlayer);
+				activity.smallImage = a_config.GetAssetKey(Asset::kPlayer);
 			}
 		}
 
@@ -200,7 +208,11 @@ namespace Presence
 		return activity;
 	}
 
-	ActivityUpdate StateMachine::Update(const Game::Snapshot& a_snapshot, std::int64_t a_startTimestamp, Clock::time_point a_now)
+	ActivityUpdate StateMachine::Update(
+		const Game::Snapshot&   a_snapshot,
+		const Config::Snapshot& a_config,
+		std::int64_t            a_startTimestamp,
+		Clock::time_point       a_now)
 	{
 		const auto nextState = DetectState(a_snapshot);
 		if (state_ == GameState::kCharacterCreation && nextState != GameState::kCharacterCreation)
@@ -234,16 +246,16 @@ namespace Presence
 			case GameState::kUnknown:
 				break;
 			case GameState::kMainMenu:
-				activity = BuildFixedActivity("Main Menu"sv, Asset::kMainMenu);
+				activity = BuildFixedActivity("Main Menu"sv, Asset::kMainMenu, a_config);
 				break;
 			case GameState::kLoading:
-				activity = BuildFixedActivity("Loading"sv, Asset::kLoading);
+				activity = BuildFixedActivity("Loading"sv, Asset::kLoading, a_config);
 				break;
 			case GameState::kCharacterCreation:
-				activity = BuildFixedActivity("Character Creation"sv, Asset::kCharacterCreation, a_startTimestamp);
+				activity = BuildFixedActivity("Character Creation"sv, Asset::kCharacterCreation, a_config, a_startTimestamp);
 				break;
 			case GameState::kInGame:
-				activity = BuildInGame(a_snapshot, a_startTimestamp, IsPlayerNameTrusted());
+				activity = BuildInGame(a_snapshot, a_config, a_startTimestamp, IsPlayerNameTrusted());
 				break;
 		}
 

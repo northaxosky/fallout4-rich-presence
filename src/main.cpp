@@ -3,8 +3,8 @@
 #include "Config.h"
 #include "Discord/Worker.h"
 #include "Game/Tick.h"
-
-#include <spdlog/spdlog.h>
+#include "Host/Client.h"
+#include "Logging.h"
 
 #include <algorithm>
 #include <exception>
@@ -16,14 +16,6 @@ namespace
 	// explicit sizing disables FHookStore auto-sizing, so leave room for later hooks
 	inline constexpr std::size_t kTrampolineSize = 0x40;
 
-	void ConfigureLogging()
-	{
-		const auto level = Config::IsDebugLoggingEnabled() ? spdlog::level::debug : spdlog::level::info;
-		const auto logger = spdlog::default_logger();
-		logger->set_level(level);
-		logger->flush_on(level);
-	}
-
 	[[nodiscard]] bool IsPlausibleApplicationID(std::string_view a_value) noexcept
 	{
 		return a_value.size() >= 17 &&
@@ -33,9 +25,19 @@ namespace
 
 	void F4SEAPI HandleF4SEMessage(F4SE::MessagingInterface::Message* a_message) noexcept
 	{
-		if (!a_message ||
-			(a_message->type != F4SE::MessagingInterface::kPostLoadGame &&
-				a_message->type != F4SE::MessagingInterface::kNewGame))
+		if (!a_message)
+		{
+			return;
+		}
+
+		if (a_message->type == F4SE::MessagingInterface::kPostPostLoad)
+		{
+			Host::Connect();
+			return;
+		}
+
+		if (a_message->type != F4SE::MessagingInterface::kPostLoadGame &&
+			a_message->type != F4SE::MessagingInterface::kNewGame)
 		{
 			return;
 		}
@@ -85,10 +87,11 @@ namespace
 		}
 
 		Config::Load();
-		ConfigureLogging();
+		Logging::Configure();
+		const auto config = Config::Current();
 		REX::INFO("Sampling every {} ms; debug logging {}",
-			Config::GetSamplingInterval().count(),
-			Config::IsDebugLoggingEnabled() ? "enabled"sv : "disabled"sv);
+			config->samplingInterval.count(),
+			config->debugLogging ? "enabled"sv : "disabled"sv);
 
 		auto       applicationID = Config::GetApplicationID();
 		const auto validApplicationID = IsPlausibleApplicationID(applicationID);

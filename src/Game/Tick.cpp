@@ -111,8 +111,9 @@ namespace
 	void RunTick()
 	{
 		const auto now = Clock::now();
+		const auto config = Config::Current();
 		const auto elapsed = now - g_tickState.lastSample;
-		if (elapsed < Config::GetSamplingInterval())
+		if (elapsed < config->samplingInterval)
 		{
 			return;
 		}
@@ -127,7 +128,7 @@ namespace
 			.player = Game::ReadPlayerState(player, g_stateMachine.IsSessionActive())
 		};
 
-		auto activity = Presence::NormalizeActivity(g_stateMachine.Update(snapshot, g_startTimestamp, now));
+		auto activity = Presence::NormalizeActivity(g_stateMachine.Update(snapshot, *config, g_startTimestamp, now));
 		if (!g_stateMachine.IsHoldingActivity() &&
 			(!g_hasPublished || !(activity == g_lastPublished)))
 		{
@@ -137,7 +138,7 @@ namespace
 		}
 
 		// REX formats before spdlog tests the level, so gate the call itself
-		if (!Config::IsDebugLoggingEnabled())
+		if (!config->debugLogging)
 		{
 			return;
 		}

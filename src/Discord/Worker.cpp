@@ -22,6 +22,7 @@
 #include <exception>
 #include <format>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -41,6 +42,51 @@ namespace
 	inline constexpr std::size_t kMaxSendsPerWindow = 4;
 	inline constexpr auto        kInitialBackoff = std::chrono::milliseconds{ 500 };
 	inline constexpr auto        kMaximumBackoff = std::chrono::seconds{ 60 };
+
+	struct StatusStorage
+	{
+		std::mutex      mutex;
+		Discord::Status value;
+	};
+
+	// the detached worker can still report status during process teardown
+	StatusStorage* g_status{ new StatusStorage{} };
+
+	void SetStatus(Discord::ConnectionState a_state, int a_pipeIndex, std::string_view a_lastError = {}) noexcept
+	{
+		try
+		{
+			const std::scoped_lock lock{ g_status->mutex };
+			g_status->value.state = a_state;
+			g_status->value.pipeIndex = a_pipeIndex;
+			g_status->value.lastError = a_lastError;
+		}
+		catch (...)
+		{}
+	}
+
+	void SetConnecting() noexcept
+	{
+		try
+		{
+			const std::scoped_lock lock{ g_status->mutex };
+			g_status->value.state = Discord::ConnectionState::kConnecting;
+			g_status->value.pipeIndex = -1;
+		}
+		catch (...)
+		{}
+	}
+
+	void IncrementSentCount() noexcept
+	{
+		try
+		{
+			const std::scoped_lock lock{ g_status->mutex };
+			++g_status->value.sentCount;
+		}
+		catch (...)
+		{}
+	}
 
 	class ActivityRateLimiter
 	{
@@ -114,6 +160,7 @@ namespace
 			}
 			catch (const std::exception& a_exception)
 			{
+				SetStatus(Discord::ConnectionState::kFailed, -1, a_exception.what());
 				try
 				{
 					REX::ERROR("Discord worker stopped unexpectedly: {}", a_exception.what());
@@ -123,6 +170,7 @@ namespace
 			}
 			catch (...)
 			{
+				SetStatus(Discord::ConnectionState::kFailed, -1, "unknown worker failure"sv);
 				try
 				{
 					REX::ERROR("Discord worker stopped unexpectedly");
@@ -140,6 +188,7 @@ namespace
 				try
 				{
 					DrainMailbox();
+					SetConnecting();
 
 					Discord::IpcClient client;
 					client.Connect(applicationID_, kHandshakeTimeout);
@@ -147,6 +196,7 @@ namespace
 					pending_.clear();
 					rejectedCommand_.reset();
 					needsSend_ = hasLatestUpdate_;
+					SetStatus(Discord::ConnectionState::kConnected, client.PipeIndex());
 					REX::INFO("Discord IPC ready on discord-ipc-{}", client.PipeIndex());
 					RunConnected(client, backoff);
 				}
@@ -321,6 +371,7 @@ namespace
 			}
 
 			a_client.Send(Discord::Protocol::Opcode::kFrame, payload);
+			IncrementSentCount();
 			const auto sentAt = Clock::now();
 			rateLimiter_.Record(sentAt);
 			pending_.insert_or_assign(nonce, PendingCommand{
@@ -344,6 +395,7 @@ namespace
 
 		void Recover(ReconnectBackoff& a_backoff, std::string_view a_reason) noexcept
 		{
+			SetStatus(Discord::ConnectionState::kFailed, -1, a_reason);
 			try
 			{
 				PrepareReconnect();
@@ -409,6 +461,7 @@ namespace Discord
 
 		try
 		{
+			SetConnecting();
 			auto worker = std::make_unique<WorkerState>(a_mailbox, std::move(a_applicationID));
 			worker->Start();
 			g_worker.store(worker.release(), std::memory_order_release);
@@ -416,6 +469,7 @@ namespace Discord
 		}
 		catch (const std::exception& a_exception)
 		{
+			SetStatus(ConnectionState::kFailed, -1, a_exception.what());
 			try
 			{
 				REX::ERROR("Discord worker initialization failed: {}", a_exception.what());
@@ -425,6 +479,7 @@ namespace Discord
 		}
 		catch (...)
 		{
+			SetStatus(ConnectionState::kFailed, -1, "unknown initialization failure"sv);
 			try
 			{
 				REX::ERROR("Discord worker initialization failed");
@@ -433,5 +488,11 @@ namespace Discord
 			{}
 		}
 		return false;
+	}
+
+	Status Worker::GetStatus()
+	{
+		const std::scoped_lock lock{ g_status->mutex };
+		return g_status->value;
 	}
 }

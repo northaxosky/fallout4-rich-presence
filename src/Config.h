@@ -1,16 +1,19 @@
 #pragma once
 
+#include "Presence/FormatTemplate.h"
+
 #include <REX/TTomlSetting.h>
 
+#include <array>
 #include <chrono>
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <string_view>
 
 namespace Presence
 {
 	enum class Asset : std::uint8_t;
-	class FormatTemplate;
 }
 
 namespace Config
@@ -29,20 +32,40 @@ namespace Config
 	extern REX::TTomlSetting<bool>         bShowLocation;
 	extern REX::TTomlSetting<bool>         bShowExactLocation;
 	extern REX::TTomlSetting<std::string>  sApplicationID;
+	extern REX::TTomlSetting<std::string>  sAssetDefault;
+	extern REX::TTomlSetting<std::string>  sAssetMainMenu;
+	extern REX::TTomlSetting<std::string>  sAssetLoading;
+	extern REX::TTomlSetting<std::string>  sAssetCharacterCreation;
+	extern REX::TTomlSetting<std::string>  sAssetPlayer;
+	extern REX::TTomlSetting<std::string>  sAssetCombat;
+	extern REX::TTomlSetting<std::string>  sDetails;
+	extern REX::TTomlSetting<std::string>  sState;
+	extern REX::TTomlSetting<std::string>  sLargeText;
+	extern REX::TTomlSetting<std::string>  sSmallText;
+	extern REX::TTomlSetting<std::string>  sCombatSmallText;
+
+	struct Snapshot
+	{
+		std::chrono::milliseconds  samplingInterval{ kDefaultSamplingInterval };
+		bool                       debugLogging{ false };
+		bool                       showPlayerName{ false };
+		bool                       showQuest{ true };
+		bool                       showLocation{ true };
+		bool                       showExactLocation{ true };
+		std::array<std::string, 6> assetKeys{};
+		Presence::FormatTemplate   details{};
+		Presence::FormatTemplate   state{};
+		Presence::FormatTemplate   largeText{};
+		Presence::FormatTemplate   smallText{};
+		Presence::FormatTemplate   combatSmallText{};
+
+		[[nodiscard]] std::string_view GetAssetKey(Presence::Asset a_asset) const noexcept;
+	};
 
 	void Load();
+	void Rebuild();
 
-	[[nodiscard]] std::chrono::milliseconds       GetSamplingInterval() noexcept;
-	[[nodiscard]] bool                            IsDebugLoggingEnabled() noexcept;
-	[[nodiscard]] bool                            ShowPlayerName() noexcept;
-	[[nodiscard]] bool                            ShowQuest() noexcept;
-	[[nodiscard]] bool                            ShowLocation() noexcept;
-	[[nodiscard]] bool                            ShowExactLocation() noexcept;
+	[[nodiscard]] std::shared_ptr<const Snapshot> Current() noexcept;
 	[[nodiscard]] std::string                     GetApplicationID();
-	[[nodiscard]] std::string_view                GetAssetKey(Presence::Asset a_asset) noexcept;
-	[[nodiscard]] const Presence::FormatTemplate& GetDetailsTemplate() noexcept;
-	[[nodiscard]] const Presence::FormatTemplate& GetStateTemplate() noexcept;
-	[[nodiscard]] const Presence::FormatTemplate& GetLargeTextTemplate() noexcept;
-	[[nodiscard]] const Presence::FormatTemplate& GetSmallTextTemplate() noexcept;
-	[[nodiscard]] const Presence::FormatTemplate& GetCombatSmallTextTemplate() noexcept;
+	[[nodiscard]] bool                            SaveOverrides();
 }
