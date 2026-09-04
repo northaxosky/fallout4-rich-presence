@@ -203,15 +203,26 @@ configured keys fall back to that slot's compiled-in key.
 A configured or mapped key that has not been uploaded renders blank because Discord does not
 expose the application's asset inventory to the plugin.
 
-For all curated map-marker artwork, upload images under these keys:
+For all curated map-marker artwork, upload images under these 74 keys:
 
-`marker_bos`, `marker_bunkerhill`, `marker_castle`, `marker_cave`, `marker_church`,
-`marker_city`, `marker_diamondcity`, `marker_drivein`, `marker_farm`,
-`marker_fillingstation`, `marker_goodneighbor`, `marker_graveyard`, `marker_hospital`,
-`marker_industrial`, `marker_institute`, `marker_junkyard`, `marker_metro`,
-`marker_militarybase`, `marker_minutemen`, `marker_policestation`, `marker_prydwen`,
-`marker_radioactive`, `marker_radiotower`, `marker_railroad`, `marker_sanctuary`,
-`marker_school`, `marker_settlement`, `marker_vault`, and `marker_water`.
+`marker_airfield`, `marker_bos`, `marker_bottlingplant`, `marker_brownstone`,
+`marker_bunker`, `marker_bunkerhill`, `marker_camper`, `marker_castle`, `marker_cave`,
+`marker_church`, `marker_city`, `marker_constitution`, `marker_countryclub`,
+`marker_customhouse`, `marker_diamondcity`, `marker_disciples`, `marker_drivein`,
+`marker_encampment`, `marker_faneuilhall`, `marker_farm`, `marker_fillingstation`,
+`marker_forest`, `marker_galactic`, `marker_goodneighbor`, `marker_graveyard`,
+`marker_highway`, `marker_hospital`, `marker_industrial`, `marker_industrialdome`,
+`marker_industrialstacks`, `marker_institute`, `marker_irishpride`, `marker_junkyard`,
+`marker_kiddiekingdom`, `marker_landmark`, `marker_libertalia`, `marker_lowrise`,
+`marker_mechanist`, `marker_metro`, `marker_militarybase`, `marker_minutemen`,
+`marker_monorail`, `marker_observatory`, `marker_office`, `marker_pier`,
+`marker_policestation`, `marker_potentialvassal`, `marker_prydwen`, `marker_quarry`,
+`marker_radioactive`, `marker_radiotower`, `marker_raidersettlement`, `marker_railroad`,
+`marker_rides`, `marker_ruinstown`, `marker_ruinsurban`, `marker_safari`, `marker_salem`,
+`marker_sanctuary`, `marker_satellite`, `marker_school`, `marker_sentinel`,
+`marker_settlement`, `marker_sewer`, `marker_shipwreck`, `marker_skyscraper`,
+`marker_submarine`, `marker_swanpond`, `marker_synthhead`, `marker_town`,
+`marker_vassalsettlement`, `marker_vault`, `marker_water`, `marker_wildwest`.
 
 Unmapped markers use the configured default gameplay image. Every mapped key above must be
 uploaded: Discord does not expose the application's asset inventory to the plugin, so a missing

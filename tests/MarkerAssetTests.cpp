@@ -57,7 +57,8 @@ int main()
 		}
 	}
 
-	for (const auto unmapped : { 0x03u, 0x53u, 0x5Bu, UINT32_MAX })
+	// kGovtBuilding, kDoor and kTeammate have no artwork; the last two are UI markers, not places
+	for (const auto unmapped : { 0x05u, 0x51u, 0x5Au, 0x5Bu, UINT32_MAX })
 	{
 		if (!Presence::MarkerAssetKey(unmapped).empty())
 		{
