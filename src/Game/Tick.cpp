@@ -60,6 +60,7 @@ namespace
 	Presence::Mailbox        g_mailbox{};
 	Presence::StateMachine   g_stateMachine{};
 	Presence::ActivityUpdate g_lastPublished{};
+	std::mutex               g_publishedMutex{};
 	std::int64_t             g_startTimestamp{ UnixTimestamp() };
 	bool                     g_hasPublished{ false };
 
@@ -134,11 +135,19 @@ namespace
 
 		auto       activity = Presence::NormalizeActivity(g_stateMachine.Update(snapshot, *config, g_startTimestamp, now));
 		const auto chosenLargeImage = config->debugLogging && activity ? activity->largeImage : std::string{};
-		if (!g_stateMachine.IsHoldingActivity() &&
-			(!g_hasPublished || !(activity == g_lastPublished)))
+		auto       shouldPublish = false;
+		if (!g_stateMachine.IsHoldingActivity())
 		{
-			g_lastPublished = activity;
-			g_hasPublished = true;
+			const std::scoped_lock lock{ g_publishedMutex };
+			if (!g_hasPublished || !(activity == g_lastPublished))
+			{
+				g_lastPublished = activity;
+				g_hasPublished = true;
+				shouldPublish = true;
+			}
+		}
+		if (shouldPublish)
+		{
 			g_mailbox.Publish(Presence::ActivityUpdate{ std::move(activity) });
 		}
 
@@ -227,6 +236,17 @@ namespace Game::Tick
 		return g_mailbox;
 	}
 
+	Presence::Activity GetPublishedActivity()
+	{
+		const std::scoped_lock lock{ g_publishedMutex };
+		return g_hasPublished && g_lastPublished ? *g_lastPublished : Presence::Activity{};
+	}
+
+	std::size_t GetMarkerCount()
+	{
+		return g_markerCache.Size();
+	}
+
 	void BeginSession() noexcept
 	{
 		g_stateMachine.BeginSession();
@@ -248,7 +268,10 @@ namespace Game::Tick
 	{
 		g_startTimestamp = UnixTimestamp();
 		g_tickState.lastSample = {};
-		g_hasPublished = false;
+		{
+			const std::scoped_lock lock{ g_publishedMutex };
+			g_hasPublished = false;
+		}
 	}
 
 	bool IsSupportedRuntime(const REL::Version& a_runtime) noexcept

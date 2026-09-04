@@ -10,8 +10,8 @@ Discord Rich Presence for Fallout 4, as an F4SE plugin.
 - Visual Studio 2022 with the Desktop development with C++ workload
 
 [DearModdingUI](https://github.com/Dear-Modding-FO4/DearModdingUI) is an optional soft
-dependency that provides the in-game settings page. Rich Presence works normally when it is not
-installed.
+dependency that provides in-game status and settings pages. Rich Presence works normally when it is
+not installed.
 
 Supported runtimes: 1.10.163, 1.10.984, 1.11.221, 1.11.240.
 
@@ -144,10 +144,11 @@ The supported localisation route is to ship translated `[Labels]` values in a
 
 ### In-game settings
 
-With DearModdingUI installed, open its menu and select **Rich Presence > Settings** to edit the
-same options in game and inspect the live Discord transport status. Sampling, privacy, format,
-asset, and logging changes apply immediately; changing `sApplicationID` requires restarting
-Fallout 4 because the Discord worker captures it at startup.
+With DearModdingUI installed, the plugin contributes two pages under the **Rich Presence** header.
+**Overview** shows the connection state, a preview of the live presence, the cached marker count,
+and any detected plugin conflicts. **Settings** edits the same options in game, with Status at the
+top. Sampling, privacy, format, asset, and logging changes apply immediately; changing
+`sApplicationID` requires restarting Fallout 4 because the Discord worker captures it at startup.
 
 Use **Apply** to persist edits. The page writes only values that differ from the installed preset
 to `Fallout4RichPresenceCustom.toml`, so they survive reinstalling the mod. **Reset all** restores

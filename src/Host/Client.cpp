@@ -4,6 +4,7 @@
 
 #include "Config.h"
 #include "Discord/Worker.h"
+#include "Game/Tick.h"
 #include "Logging.h"
 #include "Presence/Activity.h"
 #include "Presence/FormatTemplate.h"
@@ -12,6 +13,7 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
@@ -334,6 +336,104 @@ namespace Host
 			return "Unknown";
 		}
 
+		void DrawActivityField(const char* a_label, const std::string& a_value)
+		{
+			ImGui::Text("%s:", a_label);
+			ImGui::SameLine();
+			if (a_value.empty())
+			{
+				ImGui::TextDisabled("—");
+			}
+			else
+			{
+				ImGui::TextUnformatted(a_value.c_str());
+			}
+		}
+
+		void DrawElapsedTime(std::int64_t a_startTimestamp)
+		{
+			if (a_startTimestamp == 0)
+			{
+				return;
+			}
+
+			const auto now = std::chrono::duration_cast<std::chrono::seconds>(
+				std::chrono::system_clock::now().time_since_epoch())
+			                     .count();
+			const auto elapsed = now > a_startTimestamp ? now - a_startTimestamp : 0;
+			const auto hours = elapsed / 3600;
+			const auto minutes = elapsed / 60 % 60;
+			const auto seconds = elapsed % 60;
+			ImGui::Text(
+				"Elapsed: %lld:%02lld:%02lld",
+				static_cast<long long>(hours),
+				static_cast<long long>(minutes),
+				static_cast<long long>(seconds));
+		}
+
+		void DrawOverview()
+		{
+			const auto status = Discord::Worker::GetStatus();
+			const auto activity = Game::Tick::GetPublishedActivity();
+
+			if (!g_client.DrawSectionHeader("Connection"))
+			{
+				return;
+			}
+			ImGui::Text("Connection state: %s", ConnectionStateText(status.state));
+			if (status.state == Discord::ConnectionState::kConnected)
+			{
+				ImGui::Text("Pipe: discord-ipc-%d", status.pipeIndex);
+			}
+			ImGui::Text("Activities sent: %llu", static_cast<unsigned long long>(status.sentCount));
+			if (!status.lastError.empty())
+			{
+				ImGui::TextDisabled("Last error: %s", status.lastError.c_str());
+			}
+
+			ImGui::Separator();
+			if (!g_client.DrawSectionHeader("Live presence"))
+			{
+				return;
+			}
+			DrawActivityField("Details", activity.details);
+			DrawActivityField("State", activity.state);
+			DrawActivityField("Large image key", activity.largeImage);
+			DrawActivityField("Large image text", activity.largeText);
+			DrawActivityField("Small image key", activity.smallImage);
+			DrawActivityField("Small image text", activity.smallText);
+			DrawElapsedTime(activity.startTimestamp);
+			ImGui::TextDisabled("An image key that has not been uploaded to the Discord application renders blank.");
+
+			ImGui::Separator();
+			if (!g_client.DrawSectionHeader("Game data"))
+			{
+				return;
+			}
+			ImGui::Text("Map markers cached: %llu", static_cast<unsigned long long>(Game::Tick::GetMarkerCount()));
+
+			if (g_conflicts.empty())
+			{
+				return;
+			}
+
+			ImGui::Separator();
+			if (!g_client.DrawSectionHeader("Conflicts"))
+			{
+				return;
+			}
+			for (const auto& conflict : g_conflicts)
+			{
+				if (!g_client.DrawBulletText(conflict.module.c_str()))
+				{
+					return;
+				}
+				ImGui::TextDisabled(
+					"%s can also publish Discord activity, causing overwrites or flicker.",
+					conflict.displayName.c_str());
+			}
+		}
+
 		template <class T>
 		void RestoreDefault(REX::TTomlSetting<T>& a_setting)
 		{
@@ -622,6 +722,7 @@ namespace Host
 			dmui::SettingGroup group;
 			group.id = "labels";
 			group.label = "Labels";
+			group.expanded = false;
 			group.settings.push_back(MakeSetting(
 				SettingSlot::kLabelMainMenu,
 				"sLabelMainMenu",
@@ -824,13 +925,13 @@ namespace Host
 		[[nodiscard]] dmui::SettingsPage MakeSettingsPage()
 		{
 			dmui::SettingsPage page;
+			page.groups.push_back(MakeStatusGroup());
 			page.groups.push_back(MakeGeneralGroup());
 			page.groups.push_back(MakePrivacyGroup());
 			page.groups.push_back(MakeFormatGroup());
 			page.groups.push_back(MakeLabelsGroup());
 			page.groups.push_back(MakeAssetsGroup());
 			page.groups.push_back(MakeDiscordGroup());
-			page.groups.push_back(MakeStatusGroup());
 			page.actions = dmui::SettingsPageActionCallbacks{
 				.showReset = true,
 				.reset = &ResetSettings,
@@ -887,14 +988,29 @@ namespace Host
 			}
 
 			CaptureSavedValues();
-			auto page = g_client.AddSettingsPage(
+			const auto overviewPage = g_client.AddPage(
+				"overview",
+				"Overview",
+				kClientDisplayName,
+				&DrawOverview,
+				"Connection state and what your Discord profile is showing.",
+				0);
+			if (!overviewPage)
+			{
+				REX::ERROR(
+					"DearModdingUI overview-page registration failed: {}",
+					DMUI_ResultToString(g_client.LastResult()));
+				return;
+			}
+
+			const auto settingsPage = g_client.AddSettingsPage(
 				"settings",
 				"Settings",
 				kClientDisplayName,
 				MakeSettingsPage(),
 				"Configure Discord Rich Presence and inspect its connection.",
 				10);
-			if (!page)
+			if (!settingsPage)
 			{
 				REX::ERROR(
 					"DearModdingUI settings-page registration failed: {}",

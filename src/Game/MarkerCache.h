@@ -3,6 +3,7 @@
 #include <RE/M/MARKER_TYPE.h>
 #include <RE/N/NiPoint3.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <mutex>
 #include <optional>
@@ -31,6 +32,8 @@ namespace Game
 	public:
 		void Build();
 		void Invalidate();
+
+		[[nodiscard]] std::size_t Size() const;
 
 		// mirrors LocationResolver: query, settle, then return the latched result
 		[[nodiscard]] std::optional<MarkerDetails> Resolve(RE::PlayerCharacter* a_player, float a_maxDistance);

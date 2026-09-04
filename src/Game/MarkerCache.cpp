@@ -105,6 +105,12 @@ namespace Game
 		pendingSamples_ = 0;
 	}
 
+	std::size_t MarkerCache::Size() const
+	{
+		const std::scoped_lock lock{ mutex_ };
+		return entries_.size();
+	}
+
 	std::optional<MarkerDetails> MarkerCache::FindNearest(RE::PlayerCharacter* a_player, float a_maxDistance) const
 	{
 		if (!a_player || a_maxDistance <= 0.0F)
