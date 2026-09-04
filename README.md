@@ -144,11 +144,12 @@ The supported localisation route is to ship translated `[Labels]` values in a
 
 ### In-game settings
 
-With DearModdingUI installed, the plugin contributes two pages under the **Rich Presence** header.
-**Overview** shows the connection state, a preview of the live presence, the cached marker count,
-and any detected plugin conflicts. **Settings** edits the same options in game, with Status at the
-top. Sampling, privacy, format, asset, and logging changes apply immediately; changing
-`sApplicationID` requires restarting Fallout 4 because the Discord worker captures it at startup.
+With DearModdingUI installed, the plugin contributes a **Rich Presence** entry with an **Overview**
+category holding two pages. **Home** shows the connection state, a preview of the live presence, the
+cached marker count, and any detected plugin conflicts. **Settings** edits the same options in game,
+with Status at the top. Sampling, privacy, format, asset, and logging changes apply immediately;
+changing `sApplicationID` requires restarting Fallout 4 because the Discord worker captures it at
+startup.
 
 Use **Apply** to persist edits. The page writes only values that differ from the installed preset
 to `Fallout4RichPresenceCustom.toml`, so they survive reinstalling the mod. **Reset all** restores

@@ -30,6 +30,8 @@ namespace Host
 		inline constexpr auto kClientID = "dearmodding.richpresence";
 		inline constexpr auto kClientDisplayName = "Rich Presence";
 		inline constexpr auto kClientIcon = "gauge";
+		// the sidebar nests pages under their category, beneath the client name
+		inline constexpr auto kCategory = "Overview";
 		inline constexpr auto kFormatTokens = "Available tokens: {name} {level} {quest} {objective} {location} {worldspace} {state} {target} {activity}.";
 		inline constexpr auto kAssetDescription = "Use 1-32 lowercase ASCII letters, digits, or underscores, or leave empty for no image.";
 
@@ -371,7 +373,7 @@ namespace Host
 				static_cast<long long>(seconds));
 		}
 
-		void DrawOverview()
+		void DrawHome()
 		{
 			const auto status = Discord::Worker::GetStatus();
 			const auto activity = Game::Tick::GetPublishedActivity();
@@ -988,17 +990,17 @@ namespace Host
 			}
 
 			CaptureSavedValues();
-			const auto overviewPage = g_client.AddPage(
-				"overview",
-				"Overview",
-				kClientDisplayName,
-				&DrawOverview,
+			const auto homePage = g_client.AddPage(
+				"home",
+				"Home",
+				kCategory,
+				&DrawHome,
 				"Connection state and what your Discord profile is showing.",
 				0);
-			if (!overviewPage)
+			if (!homePage)
 			{
 				REX::ERROR(
-					"DearModdingUI overview-page registration failed: {}",
+					"DearModdingUI home-page registration failed: {}",
 					DMUI_ResultToString(g_client.LastResult()));
 				return;
 			}
@@ -1006,7 +1008,7 @@ namespace Host
 			const auto settingsPage = g_client.AddSettingsPage(
 				"settings",
 				"Settings",
-				kClientDisplayName,
+				kCategory,
 				MakeSettingsPage(),
 				"Configure Discord Rich Presence and inspect its connection.",
 				10);
