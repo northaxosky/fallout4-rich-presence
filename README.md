@@ -160,7 +160,7 @@ the installed preset and saves the result.
 | Default | Quest, objective, location, worldspace, and level; player name hidden. |
 | Spoiler-free | Worldspace and level; quest, objective, exact location, player name, combat target, menu activity, and marker artwork hidden. |
 | Full | Quest, objective, location, worldspace, player name, and level. |
-| Minimal | Level only. |
+| Minimal | Level only; every other source hidden, including combat target, menu activity, and marker artwork. |
 
 Each preset is a complete base configuration, and the installer never includes the custom file.
 If a mod manager replaces whole mod directories on reinstall, keep the custom file in a separate

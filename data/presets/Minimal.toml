@@ -10,14 +10,14 @@ bShowPlayerName = false
 bShowQuest = false
 bShowLocation = false
 bShowExactLocation = false
-bShowCombatTarget = true
-bShowMenuActivity = true
+bShowCombatTarget = false
+bShowMenuActivity = false
 
 [Discord]
 sApplicationID = "1533687297684537374"
 
 [Assets]
-bMarkerArtwork = true
+bMarkerArtwork = false
 bStateBadge = false
 iMarkerMaxDistance = 16384
 sAssetDefault = "fallout4"

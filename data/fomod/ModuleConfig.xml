@@ -11,7 +11,7 @@
 				<group name="Presence preset" type="SelectExactlyOne">
 					<plugins order="Explicit">
 						<plugin name="Default">
-							<description>Hide the player name and show quest and location information.</description>
+							<description>Quest, objective, location and map-marker artwork. The player name stays hidden.</description>
 							<files>
 								<file source="presets\Default.toml" destination="F4SE\Plugins\Fallout4RichPresence.toml" priority="0" />
 							</files>
@@ -20,7 +20,7 @@
 							</typeDescriptor>
 						</plugin>
 						<plugin name="Spoiler-free">
-							<description>Hide quest and objective text and show only the current worldspace.</description>
+							<description>Worldspace only. Quests, exact locations, marker artwork, enemy names and menu activity are all hidden.</description>
 							<files>
 								<file source="presets\SpoilerFree.toml" destination="F4SE\Plugins\Fallout4RichPresence.toml" priority="0" />
 							</files>
@@ -29,7 +29,7 @@
 							</typeDescriptor>
 						</plugin>
 						<plugin name="Full">
-							<description>Show player name, quest, objective, and location information.</description>
+							<description>Everything, including the player name, enemy names and the menu you are using.</description>
 							<files>
 								<file source="presets\Full.toml" destination="F4SE\Plugins\Fallout4RichPresence.toml" priority="0" />
 							</files>
@@ -38,7 +38,7 @@
 							</typeDescriptor>
 						</plugin>
 						<plugin name="Minimal">
-							<description>Show only the player level during gameplay.</description>
+							<description>Player level only. No quest, location, artwork, enemy or menu information.</description>
 							<files>
 								<file source="presets\Minimal.toml" destination="F4SE\Plugins\Fallout4RichPresence.toml" priority="0" />
 							</files>

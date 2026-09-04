@@ -16,9 +16,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: use dev cmd
-        uses: ilammy/msvc-dev-cmd@v1
-
       - name: setup xmake
         uses: xmake-io/github-action-setup-xmake@v1
         with:
