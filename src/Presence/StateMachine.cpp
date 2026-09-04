@@ -21,7 +21,7 @@ namespace
 		Presence::Activity activity;
 		activity.details = a_details;
 		activity.largeImage = a_config.GetAssetKey(a_asset);
-		activity.largeText = "Fallout 4";
+		activity.largeText = a_config.labelGameTitle;
 		activity.startTimestamp = a_startTimestamp;
 		return activity;
 	}
@@ -172,12 +172,18 @@ namespace Presence
 		}
 		activity.startTimestamp = a_startTimestamp;
 
-		const auto showName = a_config.showPlayerName && a_nameTrusted;
-		const auto showQuest = a_config.showQuest;
-		const auto showLocation = a_config.showLocation;
-		const auto showExactLocation = showLocation && a_config.showExactLocation;
-		const auto level = a_snapshot.player.level > 0 ? std::to_string(a_snapshot.player.level) : std::string{};
-		const auto state = StateBadgeLabel(stateBadge_);
+		const auto             showName = a_config.showPlayerName && a_nameTrusted;
+		const auto             showQuest = a_config.showQuest;
+		const auto             showLocation = a_config.showLocation;
+		const auto             showExactLocation = showLocation && a_config.showExactLocation;
+		const auto             level = a_snapshot.player.level > 0 ? std::to_string(a_snapshot.player.level) : std::string{};
+		const StateBadgeLabels labels{
+			.inGame = a_config.labelInGame,
+			.inCombat = a_config.labelInCombat,
+			.inPowerArmor = a_config.labelInPowerArmor,
+			.irradiated = a_config.labelIrradiated
+		};
+		const auto state = StateBadgeLabel(stateBadge_, labels);
 
 		const FormatValues values{
 			.name = showName ? std::string_view{ a_snapshot.player.name } : std::string_view{},
@@ -197,7 +203,7 @@ namespace Presence
 		activity.largeText = a_config.largeText.Render(values);
 		if (activity.details.empty() && activity.state.empty())
 		{
-			activity.state = level.empty() ? "In Game" : "Level " + level;
+			activity.state = level.empty() ? a_config.labelInGame : a_config.labelLevel.Render(values);
 		}
 
 		switch (stateBadge_)
@@ -208,7 +214,7 @@ namespace Presence
 				// an all-token template renders empty without a target name, leaving the badge untitled
 				if (activity.smallText.empty())
 				{
-					activity.smallText = StateBadgeLabel(StateBadge::kCombat);
+					activity.smallText = StateBadgeLabel(StateBadge::kCombat, labels);
 				}
 				break;
 			case StateBadge::kPowerArmor:
@@ -284,13 +290,13 @@ namespace Presence
 			case GameState::kUnknown:
 				break;
 			case GameState::kMainMenu:
-				activity = BuildFixedActivity("Main Menu"sv, Asset::kMainMenu, a_config);
+				activity = BuildFixedActivity(a_config.labelMainMenu, Asset::kMainMenu, a_config);
 				break;
 			case GameState::kLoading:
-				activity = BuildFixedActivity("Loading"sv, Asset::kLoading, a_config);
+				activity = BuildFixedActivity(a_config.labelLoading, Asset::kLoading, a_config);
 				break;
 			case GameState::kCharacterCreation:
-				activity = BuildFixedActivity("Character Creation"sv, Asset::kCharacterCreation, a_config, a_startTimestamp);
+				activity = BuildFixedActivity(a_config.labelCharacterCreation, Asset::kCharacterCreation, a_config, a_startTimestamp);
 				break;
 			case GameState::kInGame:
 				activity = BuildInGame(a_snapshot, a_config, a_startTimestamp, IsPlayerNameTrusted());

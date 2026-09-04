@@ -80,11 +80,6 @@ namespace
 		       Matches(bytes + 0x1C, kAfterAnchor);
 	}
 
-	[[nodiscard]] bool HasAddressLibrary(const REL::Version& a_runtime)
-	{
-		return std::filesystem::exists(std::format("Data/F4SE/Plugins/version-{}.bin", a_runtime.string("-")));
-	}
-
 	[[nodiscard]] std::string FormatBytes(std::uintptr_t a_site)
 	{
 		const auto  bytes = reinterpret_cast<const std::uint8_t*>(a_site - kWindowPrefix);
@@ -259,6 +254,19 @@ namespace Game::Tick
 		       a_runtime == F4SE::RUNTIME_1_11_240;
 	}
 
+	bool HasAddressLibrary(const REL::Version& a_runtime)
+	{
+		std::error_code error;
+		return std::filesystem::exists(
+			std::format("Data/F4SE/Plugins/version-{}.bin", a_runtime.string("-")),
+			error);
+	}
+
+	std::uintptr_t GetMainOnIdleAddress()
+	{
+		return Main_OnIdle.address();
+	}
+
 	bool Install(const REL::Version& a_runtime)
 	{
 		if (!IsSupportedRuntime(a_runtime))
@@ -273,7 +281,7 @@ namespace Game::Tick
 			return false;
 		}
 
-		const auto onIdle = Main_OnIdle.address();
+		const auto onIdle = GetMainOnIdleAddress();
 		const auto site = onIdle + (a_runtime == F4SE::RUNTIME_1_10_163 ? kOGHookOffset : kNGHookOffset);
 
 		if (!ValidateSite(site))

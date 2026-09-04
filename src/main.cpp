@@ -2,10 +2,12 @@
 
 #include "Config.h"
 #include "Discord/Worker.h"
+#include "Game/Conflicts.h"
 #include "Game/Tick.h"
 #include "Host/Client.h"
 #include "Logging.h"
 
+#include <REX/FModule.h>
 #include <algorithm>
 #include <exception>
 #include <string_view>
@@ -21,6 +23,83 @@ namespace
 		return a_value.size() >= 17 &&
 		       a_value.size() <= 20 &&
 		       std::ranges::all_of(a_value, [](char a_character) { return a_character >= '0' && a_character <= '9'; });
+	}
+
+	void LogStartupDiagnostics(const REL::Version& a_runtime) noexcept
+	{
+		try
+		{
+			const auto moduleBase = REX::FModule::GetExecutingModule().GetBaseAddress();
+			const auto hasAddressLibrary = Game::Tick::HasAddressLibrary(a_runtime);
+			REX::INFO("{} v{} startup: Fallout 4 runtime {}", PLUGIN_NAME, PLUGIN_VERSION, a_runtime);
+			REX::INFO(
+				"Fallout4.exe base=0x{:X}; Address Library version-{}.bin {}",
+				moduleBase,
+				a_runtime.string("-"),
+				hasAddressLibrary ? "present"sv : "missing"sv);
+
+			if (hasAddressLibrary)
+			{
+				const auto onIdle = Game::Tick::GetMainOnIdleAddress();
+				REX::INFO("Main::OnIdle=0x{:X} (RVA 0x{:X})", onIdle, onIdle - moduleBase);
+			}
+			else
+			{
+				REX::INFO("Main::OnIdle unresolved because the Address Library is unavailable");
+			}
+		}
+		catch (const std::exception& a_exception)
+		{
+			try
+			{
+				REX::WARN("Startup diagnostics unavailable: {}", a_exception.what());
+			}
+			catch (...)
+			{}
+		}
+		catch (...)
+		{
+			try
+			{
+				REX::WARN("Startup diagnostics unavailable");
+			}
+			catch (...)
+			{}
+		}
+	}
+
+	void DetectAndReportConflicts() noexcept
+	{
+		try
+		{
+			auto conflicts = Game::DetectConflicts();
+			for (const auto& conflict : conflicts)
+			{
+				REX::WARN(
+					"Conflicting plugin {} ({}) is loaded; running both can duplicate or flicker Discord presence. Disable one of the two mods.",
+					conflict.module,
+					conflict.displayName);
+			}
+			Host::SetConflicts(std::move(conflicts));
+		}
+		catch (const std::exception& a_exception)
+		{
+			try
+			{
+				REX::WARN("Conflicting-plugin detection failed: {}", a_exception.what());
+			}
+			catch (...)
+			{}
+		}
+		catch (...)
+		{
+			try
+			{
+				REX::WARN("Conflicting-plugin detection failed");
+			}
+			catch (...)
+			{}
+		}
 	}
 
 	void BuildMarkerCache() noexcept
@@ -120,6 +199,8 @@ namespace
 
 		Config::Load();
 		Logging::Configure();
+		LogStartupDiagnostics(runtime);
+		DetectAndReportConflicts();
 		const auto config = Config::Current();
 		REX::INFO("Sampling every {} ms; debug logging {}",
 			config->samplingInterval.count(),

@@ -58,6 +58,15 @@ namespace Host
 			kLargeText,
 			kSmallText,
 			kCombatSmallText,
+			kLabelMainMenu,
+			kLabelLoading,
+			kLabelCharacterCreation,
+			kLabelGameTitle,
+			kLabelInGame,
+			kLabelInCombat,
+			kLabelInPowerArmor,
+			kLabelIrradiated,
+			kLabelLevel,
 			kCount
 		};
 
@@ -70,6 +79,7 @@ namespace Host
 		};
 		std::array<dmui::SettingValue, static_cast<std::size_t>(SettingSlot::kCount)> g_savedValues{};
 		Discord::Status                                                               g_status{};
+		std::vector<Game::Conflict>                                                   g_conflicts;
 
 		[[nodiscard]] constexpr std::size_t SlotIndex(SettingSlot a_slot) noexcept
 		{
@@ -112,6 +122,15 @@ namespace Host
 			CaptureValue(SettingSlot::kLargeText, Config::sLargeText);
 			CaptureValue(SettingSlot::kSmallText, Config::sSmallText);
 			CaptureValue(SettingSlot::kCombatSmallText, Config::sCombatSmallText);
+			CaptureValue(SettingSlot::kLabelMainMenu, Config::sLabelMainMenu);
+			CaptureValue(SettingSlot::kLabelLoading, Config::sLabelLoading);
+			CaptureValue(SettingSlot::kLabelCharacterCreation, Config::sLabelCharacterCreation);
+			CaptureValue(SettingSlot::kLabelGameTitle, Config::sLabelGameTitle);
+			CaptureValue(SettingSlot::kLabelInGame, Config::sLabelInGame);
+			CaptureValue(SettingSlot::kLabelInCombat, Config::sLabelInCombat);
+			CaptureValue(SettingSlot::kLabelInPowerArmor, Config::sLabelInPowerArmor);
+			CaptureValue(SettingSlot::kLabelIrradiated, Config::sLabelIrradiated);
+			CaptureValue(SettingSlot::kLabelLevel, Config::sLabelLevel);
 		}
 
 		template <dmui::SettingValueAlternative T>
@@ -328,6 +347,15 @@ namespace Host
 			RestoreDefault(Config::sLargeText);
 			RestoreDefault(Config::sSmallText);
 			RestoreDefault(Config::sCombatSmallText);
+			RestoreDefault(Config::sLabelMainMenu);
+			RestoreDefault(Config::sLabelLoading);
+			RestoreDefault(Config::sLabelCharacterCreation);
+			RestoreDefault(Config::sLabelGameTitle);
+			RestoreDefault(Config::sLabelInGame);
+			RestoreDefault(Config::sLabelInCombat);
+			RestoreDefault(Config::sLabelInPowerArmor);
+			RestoreDefault(Config::sLabelIrradiated);
+			RestoreDefault(Config::sLabelLevel);
 			Config::Rebuild();
 			Logging::Configure();
 			if (Config::SaveOverrides())
@@ -548,6 +576,90 @@ namespace Host
 			return group;
 		}
 
+		[[nodiscard]] dmui::SettingGroup MakeLabelsGroup()
+		{
+			const auto text = dmui::TextSettingControl{ .bufferCapacity = 128 };
+			const auto templateText = dmui::TextSettingControl{
+				.bufferCapacity = Presence::kFormatTemplateSourceLimit + 1
+			};
+			dmui::SettingGroup group;
+			group.id = "labels";
+			group.label = "Labels";
+			group.settings.push_back(MakeSetting(
+				SettingSlot::kLabelMainMenu,
+				"sLabelMainMenu",
+				"Main menu",
+				"Text shown at the main menu.",
+				Config::sLabelMainMenu,
+				text,
+				dmui::SettingApplyTiming::kImmediate));
+			group.settings.push_back(MakeSetting(
+				SettingSlot::kLabelLoading,
+				"sLabelLoading",
+				"Loading",
+				"Text shown while loading.",
+				Config::sLabelLoading,
+				text,
+				dmui::SettingApplyTiming::kImmediate));
+			group.settings.push_back(MakeSetting(
+				SettingSlot::kLabelCharacterCreation,
+				"sLabelCharacterCreation",
+				"Character creation",
+				"Text shown during character creation.",
+				Config::sLabelCharacterCreation,
+				text,
+				dmui::SettingApplyTiming::kImmediate));
+			group.settings.push_back(MakeSetting(
+				SettingSlot::kLabelGameTitle,
+				"sLabelGameTitle",
+				"Game title",
+				"Large-image tooltip for fixed game states.",
+				Config::sLabelGameTitle,
+				text,
+				dmui::SettingApplyTiming::kImmediate));
+			group.settings.push_back(MakeSetting(
+				SettingSlot::kLabelInGame,
+				"sLabelInGame",
+				"In game",
+				"Label for normal gameplay.",
+				Config::sLabelInGame,
+				text,
+				dmui::SettingApplyTiming::kImmediate));
+			group.settings.push_back(MakeSetting(
+				SettingSlot::kLabelInCombat,
+				"sLabelInCombat",
+				"In combat",
+				"Label and empty combat-tooltip fallback for combat.",
+				Config::sLabelInCombat,
+				text,
+				dmui::SettingApplyTiming::kImmediate));
+			group.settings.push_back(MakeSetting(
+				SettingSlot::kLabelInPowerArmor,
+				"sLabelInPowerArmor",
+				"In power armor",
+				"Label for the power-armor state.",
+				Config::sLabelInPowerArmor,
+				text,
+				dmui::SettingApplyTiming::kImmediate));
+			group.settings.push_back(MakeSetting(
+				SettingSlot::kLabelIrradiated,
+				"sLabelIrradiated",
+				"Irradiated",
+				"Label for the irradiated state.",
+				Config::sLabelIrradiated,
+				text,
+				dmui::SettingApplyTiming::kImmediate));
+			group.settings.push_back(MakeSetting(
+				SettingSlot::kLabelLevel,
+				"sLabelLevel",
+				"Level fallback",
+				"Fallback when gameplay details and state are empty. Available token: {level}.",
+				Config::sLabelLevel,
+				templateText,
+				dmui::SettingApplyTiming::kImmediate));
+			return group;
+		}
+
 		[[nodiscard]] dmui::SettingGroup MakeDiscordGroup()
 		{
 			dmui::SettingGroup group;
@@ -587,6 +699,16 @@ namespace Host
 				"Last error",
 				[] { ImGui::TextUnformatted(g_status.lastError.c_str()); },
 				[] { return !g_status.lastError.empty(); }));
+			group.settings.push_back(MakeReadOnly(
+				"pluginConflict",
+				"Plugin conflict",
+				[] {
+					for (const auto& conflict : g_conflicts)
+					{
+						ImGui::Text("%s (%s)", conflict.displayName.c_str(), conflict.module.c_str());
+					}
+				},
+				[] { return !g_conflicts.empty(); }));
 			return group;
 		}
 
@@ -596,6 +718,7 @@ namespace Host
 			page.groups.push_back(MakeGeneralGroup());
 			page.groups.push_back(MakePrivacyGroup());
 			page.groups.push_back(MakeFormatGroup());
+			page.groups.push_back(MakeLabelsGroup());
 			page.groups.push_back(MakeAssetsGroup());
 			page.groups.push_back(MakeDiscordGroup());
 			page.groups.push_back(MakeStatusGroup());
@@ -622,6 +745,11 @@ namespace Host
 			};
 			return page;
 		}
+	}
+
+	void SetConflicts(std::vector<Game::Conflict> a_conflicts) noexcept
+	{
+		g_conflicts = std::move(a_conflicts);
 	}
 
 	void Connect() noexcept

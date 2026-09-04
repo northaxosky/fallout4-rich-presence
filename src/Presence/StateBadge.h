@@ -17,6 +17,14 @@ namespace Presence
 		kIrradiated
 	};
 
+	struct StateBadgeLabels
+	{
+		std::string_view inGame;
+		std::string_view inCombat;
+		std::string_view inPowerArmor;
+		std::string_view irradiated;
+	};
+
 	class DebouncedFlag
 	{
 	public:
@@ -119,21 +127,23 @@ namespace Presence
 		return StateBadge::kNone;
 	}
 
-	[[nodiscard]] constexpr std::string_view StateBadgeLabel(StateBadge a_badge) noexcept
+	[[nodiscard]] inline std::string_view StateBadgeLabel(
+		StateBadge              a_badge,
+		const StateBadgeLabels& a_labels) noexcept
 	{
 		switch (a_badge)
 		{
 			case StateBadge::kCombat:
-				return "In Combat";
+				return a_labels.inCombat;
 			case StateBadge::kPowerArmor:
-				return "In Power Armor";
+				return a_labels.inPowerArmor;
 			case StateBadge::kIrradiated:
-				return "Irradiated";
+				return a_labels.irradiated;
 			case StateBadge::kNone:
-				return "In Game";
+				return a_labels.inGame;
 		}
 
-		return "In Game";
+		return a_labels.inGame;
 	}
 
 	[[nodiscard]] constexpr std::string_view ToString(StateBadge a_badge) noexcept

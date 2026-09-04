@@ -2,6 +2,8 @@
 
 #include <REL/Version.h>
 
+#include <cstdint>
+
 namespace Presence
 {
 	class Mailbox;
@@ -9,7 +11,9 @@ namespace Presence
 
 namespace Game::Tick
 {
-	[[nodiscard]] bool IsSupportedRuntime(const REL::Version& a_runtime) noexcept;
+	[[nodiscard]] bool           IsSupportedRuntime(const REL::Version& a_runtime) noexcept;
+	[[nodiscard]] bool           HasAddressLibrary(const REL::Version& a_runtime);
+	[[nodiscard]] std::uintptr_t GetMainOnIdleAddress();
 
 	bool Install(const REL::Version& a_runtime);
 

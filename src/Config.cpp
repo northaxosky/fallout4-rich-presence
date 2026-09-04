@@ -58,6 +58,16 @@ namespace Config
 	REX::TTomlSetting<std::string> sLargeText{ "Format"sv, "sLargeText"sv, std::string{ Config::kDefaultLargeTextTemplate } };
 	REX::TTomlSetting<std::string> sSmallText{ "Format"sv, "sSmallText"sv, std::string{ Config::kDefaultSmallTextTemplate } };
 	REX::TTomlSetting<std::string> sCombatSmallText{ "Format"sv, "sCombatSmallText"sv, std::string{ Config::kDefaultCombatSmallTextTemplate } };
+
+	REX::TTomlSetting<std::string> sLabelMainMenu{ "Labels"sv, "sLabelMainMenu"sv, std::string{ Config::kDefaultLabelMainMenu } };
+	REX::TTomlSetting<std::string> sLabelLoading{ "Labels"sv, "sLabelLoading"sv, std::string{ Config::kDefaultLabelLoading } };
+	REX::TTomlSetting<std::string> sLabelCharacterCreation{ "Labels"sv, "sLabelCharacterCreation"sv, std::string{ Config::kDefaultLabelCharacterCreation } };
+	REX::TTomlSetting<std::string> sLabelGameTitle{ "Labels"sv, "sLabelGameTitle"sv, std::string{ Config::kDefaultLabelGameTitle } };
+	REX::TTomlSetting<std::string> sLabelInGame{ "Labels"sv, "sLabelInGame"sv, std::string{ Config::kDefaultLabelInGame } };
+	REX::TTomlSetting<std::string> sLabelInCombat{ "Labels"sv, "sLabelInCombat"sv, std::string{ Config::kDefaultLabelInCombat } };
+	REX::TTomlSetting<std::string> sLabelInPowerArmor{ "Labels"sv, "sLabelInPowerArmor"sv, std::string{ Config::kDefaultLabelInPowerArmor } };
+	REX::TTomlSetting<std::string> sLabelIrradiated{ "Labels"sv, "sLabelIrradiated"sv, std::string{ Config::kDefaultLabelIrradiated } };
+	REX::TTomlSetting<std::string> sLabelLevel{ "Labels"sv, "sLabelLevel"sv, std::string{ Config::kDefaultLabelLevelTemplate } };
 }
 
 namespace
@@ -127,6 +137,7 @@ namespace
 	[[nodiscard]] Presence::FormatTemplate ResolveTemplate(
 		REX::TTomlSetting<std::string>& a_setting,
 		std::string_view                a_default,
+		std::string_view                a_section,
 		std::string_view                a_name,
 		const Presence::FormatTemplate& a_previous,
 		Config::Validation              a_validation)
@@ -143,7 +154,7 @@ namespace
 			return a_previous;
 		}
 
-		REX::WARN("Format.{} is invalid at byte {} ({}); using the installed preset", a_name, result.error().position, result.error().message);
+		REX::WARN("{}.{} is invalid at byte {} ({}); using the installed preset", a_section, a_name, result.error().position, result.error().message);
 
 		auto fallback = a_setting.GetValueDefault();
 		auto compiled = Presence::FormatTemplate::Compile(fallback);
@@ -159,7 +170,7 @@ namespace
 			return std::move(*compiled);
 		}
 
-		REX::ERROR("Compiled-in default Format.{} is invalid; field disabled", a_name);
+		REX::ERROR("Compiled-in default {}.{} is invalid; field disabled", a_section, a_name);
 		return {};
 	}
 
@@ -305,11 +316,20 @@ namespace Config
 		snapshot->assetKeys[AssetIndex(Presence::Asset::kCombat)] = ResolveAssetKey(sAssetCombat, Presence::Asset::kCombat, "sAssetCombat"sv, previous->GetAssetKey(Presence::Asset::kCombat), a_validation);
 		snapshot->assetKeys[AssetIndex(Presence::Asset::kPowerArmor)] = ResolveAssetKey(sAssetPowerArmor, Presence::Asset::kPowerArmor, "sAssetPowerArmor"sv, previous->GetAssetKey(Presence::Asset::kPowerArmor), a_validation);
 		snapshot->assetKeys[AssetIndex(Presence::Asset::kIrradiated)] = ResolveAssetKey(sAssetIrradiated, Presence::Asset::kIrradiated, "sAssetIrradiated"sv, previous->GetAssetKey(Presence::Asset::kIrradiated), a_validation);
-		snapshot->details = ResolveTemplate(sDetails, kDefaultDetailsTemplate, "sDetails"sv, previous->details, a_validation);
-		snapshot->state = ResolveTemplate(sState, kDefaultStateTemplate, "sState"sv, previous->state, a_validation);
-		snapshot->largeText = ResolveTemplate(sLargeText, kDefaultLargeTextTemplate, "sLargeText"sv, previous->largeText, a_validation);
-		snapshot->smallText = ResolveTemplate(sSmallText, kDefaultSmallTextTemplate, "sSmallText"sv, previous->smallText, a_validation);
-		snapshot->combatSmallText = ResolveTemplate(sCombatSmallText, kDefaultCombatSmallTextTemplate, "sCombatSmallText"sv, previous->combatSmallText, a_validation);
+		snapshot->details = ResolveTemplate(sDetails, kDefaultDetailsTemplate, "Format"sv, "sDetails"sv, previous->details, a_validation);
+		snapshot->state = ResolveTemplate(sState, kDefaultStateTemplate, "Format"sv, "sState"sv, previous->state, a_validation);
+		snapshot->largeText = ResolveTemplate(sLargeText, kDefaultLargeTextTemplate, "Format"sv, "sLargeText"sv, previous->largeText, a_validation);
+		snapshot->smallText = ResolveTemplate(sSmallText, kDefaultSmallTextTemplate, "Format"sv, "sSmallText"sv, previous->smallText, a_validation);
+		snapshot->combatSmallText = ResolveTemplate(sCombatSmallText, kDefaultCombatSmallTextTemplate, "Format"sv, "sCombatSmallText"sv, previous->combatSmallText, a_validation);
+		snapshot->labelMainMenu = sLabelMainMenu.GetValue();
+		snapshot->labelLoading = sLabelLoading.GetValue();
+		snapshot->labelCharacterCreation = sLabelCharacterCreation.GetValue();
+		snapshot->labelGameTitle = sLabelGameTitle.GetValue();
+		snapshot->labelInGame = sLabelInGame.GetValue();
+		snapshot->labelInCombat = sLabelInCombat.GetValue();
+		snapshot->labelInPowerArmor = sLabelInPowerArmor.GetValue();
+		snapshot->labelIrradiated = sLabelIrradiated.GetValue();
+		snapshot->labelLevel = ResolveTemplate(sLabelLevel, kDefaultLabelLevelTemplate, "Labels"sv, "sLabelLevel"sv, previous->labelLevel, a_validation);
 		g_current.store(std::move(snapshot), std::memory_order_release);
 	}
 
@@ -365,6 +385,15 @@ namespace Config
 			WriteOverride(output, sLargeText, "Format"sv, "sLargeText"sv);
 			WriteOverride(output, sSmallText, "Format"sv, "sSmallText"sv);
 			WriteOverride(output, sCombatSmallText, "Format"sv, "sCombatSmallText"sv);
+			WriteOverride(output, sLabelMainMenu, "Labels"sv, "sLabelMainMenu"sv);
+			WriteOverride(output, sLabelLoading, "Labels"sv, "sLabelLoading"sv);
+			WriteOverride(output, sLabelCharacterCreation, "Labels"sv, "sLabelCharacterCreation"sv);
+			WriteOverride(output, sLabelGameTitle, "Labels"sv, "sLabelGameTitle"sv);
+			WriteOverride(output, sLabelInGame, "Labels"sv, "sLabelInGame"sv);
+			WriteOverride(output, sLabelInCombat, "Labels"sv, "sLabelInCombat"sv);
+			WriteOverride(output, sLabelInPowerArmor, "Labels"sv, "sLabelInPowerArmor"sv);
+			WriteOverride(output, sLabelIrradiated, "Labels"sv, "sLabelIrradiated"sv);
+			WriteOverride(output, sLabelLevel, "Labels"sv, "sLabelLevel"sv);
 
 			(void)MarkImplicitTables(output);
 			std::filesystem::create_directories(std::filesystem::path{ kCustomPath }.parent_path());

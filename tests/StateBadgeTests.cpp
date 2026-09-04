@@ -124,20 +124,37 @@ int main()
 	}
 	else
 	{
-		constexpr std::array badges{
-			Presence::StateBadge::kNone,
-			Presence::StateBadge::kCombat,
-			Presence::StateBadge::kPowerArmor,
-			Presence::StateBadge::kIrradiated
+		const Presence::StateBadgeLabels labels{
+			.inGame = "Exploring",
+			.inCombat = "Battling",
+			.inPowerArmor = "Armored",
+			.irradiated = ""
 		};
-		for (const auto badge : badges)
+		struct BadgeLabelCase
 		{
-			const auto label = Presence::StateBadgeLabel(badge);
-			const auto rendered = stateFormat->Render(Presence::FormatValues{ .state = label });
-			if (rendered != label)
+			Presence::StateBadge badge;
+			std::string_view     expected;
+		};
+		constexpr std::array cases{
+			BadgeLabelCase{ Presence::StateBadge::kNone, "Exploring" },
+			BadgeLabelCase{ Presence::StateBadge::kCombat, "Battling" },
+			BadgeLabelCase{ Presence::StateBadge::kPowerArmor, "Armored" },
+			BadgeLabelCase{ Presence::StateBadge::kIrradiated, "" }
+		};
+		for (const auto& test : cases)
+		{
+			const auto label = Presence::StateBadgeLabel(test.badge, labels);
+			if (label != test.expected)
 			{
-				std::cerr << "FAIL state label " << Presence::ToString(badge) << ": expected \""
-						  << label << "\", got \"" << rendered << "\"\n";
+				std::cerr << "FAIL custom state label " << Presence::ToString(test.badge)
+						  << ": expected \"" << test.expected << "\", got \"" << label << "\"\n";
+				passed = false;
+			}
+			const auto rendered = stateFormat->Render(Presence::FormatValues{ .state = label });
+			if (rendered != test.expected)
+			{
+				std::cerr << "FAIL rendered state label " << Presence::ToString(test.badge)
+						  << ": expected \"" << test.expected << "\", got \"" << rendered << "\"\n";
 				passed = false;
 			}
 		}

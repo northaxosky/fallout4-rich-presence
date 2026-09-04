@@ -30,6 +30,15 @@ namespace Config
 	inline constexpr std::string_view kDefaultLargeTextTemplate = "{objective}";
 	inline constexpr std::string_view kDefaultSmallTextTemplate = "{name} - Level {level}";
 	inline constexpr std::string_view kDefaultCombatSmallTextTemplate = "Fighting {target}";
+	inline constexpr std::string_view kDefaultLabelMainMenu = "Main Menu";
+	inline constexpr std::string_view kDefaultLabelLoading = "Loading";
+	inline constexpr std::string_view kDefaultLabelCharacterCreation = "Character Creation";
+	inline constexpr std::string_view kDefaultLabelGameTitle = "Fallout 4";
+	inline constexpr std::string_view kDefaultLabelInGame = "In Game";
+	inline constexpr std::string_view kDefaultLabelInCombat = "In Combat";
+	inline constexpr std::string_view kDefaultLabelInPowerArmor = "In Power Armor";
+	inline constexpr std::string_view kDefaultLabelIrradiated = "Irradiated";
+	inline constexpr std::string_view kDefaultLabelLevelTemplate = "Level {level}";
 
 	extern REX::TTomlSetting<std::int32_t> iSamplingIntervalMs;
 	extern REX::TTomlSetting<std::int32_t> iIrradiatedPercent;
@@ -56,6 +65,15 @@ namespace Config
 	extern REX::TTomlSetting<std::string>  sLargeText;
 	extern REX::TTomlSetting<std::string>  sSmallText;
 	extern REX::TTomlSetting<std::string>  sCombatSmallText;
+	extern REX::TTomlSetting<std::string>  sLabelMainMenu;
+	extern REX::TTomlSetting<std::string>  sLabelLoading;
+	extern REX::TTomlSetting<std::string>  sLabelCharacterCreation;
+	extern REX::TTomlSetting<std::string>  sLabelGameTitle;
+	extern REX::TTomlSetting<std::string>  sLabelInGame;
+	extern REX::TTomlSetting<std::string>  sLabelInCombat;
+	extern REX::TTomlSetting<std::string>  sLabelInPowerArmor;
+	extern REX::TTomlSetting<std::string>  sLabelIrradiated;
+	extern REX::TTomlSetting<std::string>  sLabelLevel;
 
 	struct Snapshot
 	{
@@ -76,6 +94,15 @@ namespace Config
 		Presence::FormatTemplate   largeText{};
 		Presence::FormatTemplate   smallText{};
 		Presence::FormatTemplate   combatSmallText{};
+		std::string                labelMainMenu{ kDefaultLabelMainMenu };
+		std::string                labelLoading{ kDefaultLabelLoading };
+		std::string                labelCharacterCreation{ kDefaultLabelCharacterCreation };
+		std::string                labelGameTitle{ kDefaultLabelGameTitle };
+		std::string                labelInGame{ kDefaultLabelInGame };
+		std::string                labelInCombat{ kDefaultLabelInCombat };
+		std::string                labelInPowerArmor{ kDefaultLabelInPowerArmor };
+		std::string                labelIrradiated{ kDefaultLabelIrradiated };
+		Presence::FormatTemplate   labelLevel{};
 
 		[[nodiscard]] std::string_view GetAssetKey(Presence::Asset a_asset) const noexcept;
 	};

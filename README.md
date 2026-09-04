@@ -87,6 +87,15 @@ exactly one configuration preset. For a manual installation, copy the DLL and on
 | Format | `sLargeText` | `"{objective}"` | In-game large-image tooltip. |
 | Format | `sSmallText` | `"{name} - Level {level}"` | Normal in-game small-image tooltip. |
 | Format | `sCombatSmallText` | `"Fighting {target}"` | Combat small-image tooltip. |
+| Labels | `sLabelMainMenu` | `"Main Menu"` | Main-menu details. |
+| Labels | `sLabelLoading` | `"Loading"` | Loading details. |
+| Labels | `sLabelCharacterCreation` | `"Character Creation"` | Character-creation details. |
+| Labels | `sLabelGameTitle` | `"Fallout 4"` | Large-image tooltip for fixed states. |
+| Labels | `sLabelInGame` | `"In Game"` | Normal gameplay label. |
+| Labels | `sLabelInCombat` | `"In Combat"` | Combat label and empty combat-tooltip fallback. |
+| Labels | `sLabelInPowerArmor` | `"In Power Armor"` | Power-armor label. |
+| Labels | `sLabelIrradiated` | `"Irradiated"` | Irradiated label. |
+| Labels | `sLabelLevel` | `"Level {level}"` | In-game fallback when details and state are empty. |
 
 An asset key may be empty to show no image for that slot. A small image identical to the large
 image is suppressed, so a single uploaded asset renders one icon rather than a duplicated badge;
@@ -111,6 +120,8 @@ example to ship different artwork with a modlist.
 `Fallout4RichPresence.toml` is replaced on reinstall, so put personal overrides in
 `Fallout4RichPresenceCustom.toml` next to it. Keys omitted there inherit the selected preset.
 When no overrides remain, the custom file is kept with only a short header comment.
+The supported localisation route is to ship translated `[Labels]` values in a
+`Fallout4RichPresenceCustom.toml`; empty labels intentionally render no text.
 
 ### In-game settings
 
@@ -142,7 +153,8 @@ The in-game format keys accept `{name}`, `{level}`, `{quest}`, `{objective}`, `{
 `{worldspace}`, `{state}`, and `{target}`. `{state}` resolves to `In Game`, `In Combat`,
 `In Power Armor`, or `Irradiated` according to the active badge. `{target}` resolves to the
 debounced combat target name and is empty outside combat, when no safe name is available, or
-when `bShowCombatTarget` is false. Main-menu, loading, and character-creation labels remain fixed.
+when `bShowCombatTarget` is false. These state labels and the fixed-state text come from
+`[Labels]`; `sLabelLevel` is also a template and accepts `{level}`.
 
 Hidden or unavailable values resolve to empty. An empty token joins the separator runs on either
 side into one boundary, then whitespace is collapsed without splitting UTF-8 code points. If
@@ -161,6 +173,16 @@ The Discord worker is intentionally leaked until process exit because F4SE provi
 
 Set `bDebugLogging = true` in `Fallout4RichPresenceCustom.toml`, then inspect
 `Documents/My Games/Fallout4/F4SE/Fallout4RichPresence.log`.
+
+At every plugin load, the INFO log starts with a compact diagnostics banner containing the plugin
+and runtime versions, `Fallout4.exe` module base, Address Library status, and the resolved
+`Main::OnIdle` absolute address and RVA. This remains enabled without debug logging so bug reports
+contain enough information to interpret hook addresses.
+
+If either `Discord_Presence_F4SE_Remake.dll` or the original
+`Discord_Presence_F4SE.dll` is already loaded, the plugin warns that running both presence mods
+can duplicate or flicker Discord activity. It continues loading; disable one of the two mods to
+remove the conflict. DearModdingUI also shows the detected conflict in the Status group.
 
 1. Cold-launch to the title screen. Every sample before and at the main menu must show `sessionActive=false`, and `presence=in_game` must never appear.
 2. Load a save, then quit back to the title screen. A successful load must change `sessionActive` to `true`; the first observed main-menu sample must change it back to `false`, with no previous quest or location published afterward.
