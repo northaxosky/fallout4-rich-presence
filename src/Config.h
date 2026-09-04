@@ -39,6 +39,15 @@ namespace Config
 	inline constexpr std::string_view kDefaultLabelInPowerArmor = "In Power Armor";
 	inline constexpr std::string_view kDefaultLabelIrradiated = "Irradiated";
 	inline constexpr std::string_view kDefaultLabelLevelTemplate = "Level {level}";
+	inline constexpr std::string_view kDefaultLabelBarter = "Trading";
+	inline constexpr std::string_view kDefaultLabelBarterNamedTemplate = "Trading with {name}";
+	inline constexpr std::string_view kDefaultLabelWorkbench = "Using a Workbench";
+	inline constexpr std::string_view kDefaultLabelWorkbenchNamedTemplate = "Using the {name}";
+	inline constexpr std::string_view kDefaultLabelWorkshop = "Building";
+	inline constexpr std::string_view kDefaultLabelTerminal = "Using a Terminal";
+	inline constexpr std::string_view kDefaultLabelLockpicking = "Lockpicking";
+	inline constexpr std::string_view kDefaultLabelSitWait = "Waiting";
+	inline constexpr std::string_view kDefaultLabelDialogue = "Talking";
 
 	extern REX::TTomlSetting<std::int32_t> iSamplingIntervalMs;
 	extern REX::TTomlSetting<std::int32_t> iIrradiatedPercent;
@@ -48,6 +57,7 @@ namespace Config
 	extern REX::TTomlSetting<bool>         bShowLocation;
 	extern REX::TTomlSetting<bool>         bShowExactLocation;
 	extern REX::TTomlSetting<bool>         bShowCombatTarget;
+	extern REX::TTomlSetting<bool>         bShowMenuActivity;
 	extern REX::TTomlSetting<std::string>  sApplicationID;
 	extern REX::TTomlSetting<bool>         bMarkerArtwork;
 	extern REX::TTomlSetting<bool>         bStateBadge;
@@ -74,6 +84,15 @@ namespace Config
 	extern REX::TTomlSetting<std::string>  sLabelInPowerArmor;
 	extern REX::TTomlSetting<std::string>  sLabelIrradiated;
 	extern REX::TTomlSetting<std::string>  sLabelLevel;
+	extern REX::TTomlSetting<std::string>  sLabelBarter;
+	extern REX::TTomlSetting<std::string>  sLabelBarterNamed;
+	extern REX::TTomlSetting<std::string>  sLabelWorkbench;
+	extern REX::TTomlSetting<std::string>  sLabelWorkbenchNamed;
+	extern REX::TTomlSetting<std::string>  sLabelWorkshop;
+	extern REX::TTomlSetting<std::string>  sLabelTerminal;
+	extern REX::TTomlSetting<std::string>  sLabelLockpicking;
+	extern REX::TTomlSetting<std::string>  sLabelSitWait;
+	extern REX::TTomlSetting<std::string>  sLabelDialogue;
 
 	struct Snapshot
 	{
@@ -85,6 +104,7 @@ namespace Config
 		bool                       showLocation{ true };
 		bool                       showExactLocation{ true };
 		bool                       showCombatTarget{ true };
+		bool                       showMenuActivity{ true };
 		bool                       markerArtwork{ true };
 		bool                       stateBadge{ true };
 		std::int32_t               markerMaxDistance{ kDefaultMarkerMaxDistance };
@@ -103,6 +123,15 @@ namespace Config
 		std::string                labelInPowerArmor{ kDefaultLabelInPowerArmor };
 		std::string                labelIrradiated{ kDefaultLabelIrradiated };
 		Presence::FormatTemplate   labelLevel{};
+		std::string                labelBarter{ kDefaultLabelBarter };
+		Presence::FormatTemplate   labelBarterNamed{};
+		std::string                labelWorkbench{ kDefaultLabelWorkbench };
+		Presence::FormatTemplate   labelWorkbenchNamed{};
+		std::string                labelWorkshop{ kDefaultLabelWorkshop };
+		std::string                labelTerminal{ kDefaultLabelTerminal };
+		std::string                labelLockpicking{ kDefaultLabelLockpicking };
+		std::string                labelSitWait{ kDefaultLabelSitWait };
+		std::string                labelDialogue{ kDefaultLabelDialogue };
 
 		[[nodiscard]] std::string_view GetAssetKey(Presence::Asset a_asset) const noexcept;
 	};

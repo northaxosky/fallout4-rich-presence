@@ -38,6 +38,7 @@ namespace Presence
 		loadingExitSamples_ = 0;
 		combatActive_.Reset();
 		combatTarget_.Reset();
+		menuActivity_.Reset();
 		powerArmorActive_.Reset();
 		irradiatedActive_.Reset();
 		stateBadge_ = StateBadge::kNone;
@@ -54,6 +55,7 @@ namespace Presence
 		loadingExitSamples_ = 0;
 		combatActive_.Reset();
 		combatTarget_.Reset();
+		menuActivity_.Reset();
 		powerArmorActive_.Reset();
 		irradiatedActive_.Reset();
 		stateBadge_ = StateBadge::kNone;
@@ -141,6 +143,7 @@ namespace Presence
 				.id = a_snapshot.player.combatTargetID,
 				.name = a_snapshot.player.combatTargetName });
 		}
+
 		else
 		{
 			combatTarget_.Reset();
@@ -152,6 +155,20 @@ namespace Presence
 			combatActive_.IsActive(),
 			a_config.stateBadge && powerArmorActive_.IsActive(),
 			a_config.stateBadge && irradiatedActive_.IsActive());
+	}
+
+	void StateMachine::UpdateMenuActivity(const Game::Snapshot& a_snapshot)
+	{
+		const auto rawActivity = static_cast<MenuActivity>(a_snapshot.player.menuActivity);
+		if (rawActivity == MenuActivity::kNone)
+		{
+			menuActivity_.Reset();
+			return;
+		}
+
+		menuActivity_.Update(MenuActivityValue{
+			.activity = rawActivity,
+			.name = a_snapshot.player.menuActivityName });
 	}
 
 	Activity StateMachine::BuildInGame(
@@ -183,7 +200,34 @@ namespace Presence
 			.inPowerArmor = a_config.labelInPowerArmor,
 			.irradiated = a_config.labelIrradiated
 		};
-		const auto state = StateBadgeLabel(stateBadge_, labels);
+		const auto               state = StateBadgeLabel(stateBadge_, labels);
+		const MenuActivityLabels activityLabels{
+			.barter = a_config.labelBarter,
+			.workbench = a_config.labelWorkbench,
+			.workshop = a_config.labelWorkshop,
+			.terminal = a_config.labelTerminal,
+			.lockpicking = a_config.labelLockpicking,
+			.sitWait = a_config.labelSitWait,
+			.dialogue = a_config.labelDialogue
+		};
+		const auto  menuActivity = GetMenuActivity();
+		std::string activityText;
+		if (a_config.showMenuActivity && menuActivity != MenuActivity::kNone)
+		{
+			const auto activityName = GetMenuActivityName();
+			if (!activityName.empty() && menuActivity == MenuActivity::kBarter)
+			{
+				activityText = a_config.labelBarterNamed.Render(FormatValues{ .name = activityName });
+			}
+			else if (!activityName.empty() && menuActivity == MenuActivity::kWorkbench)
+			{
+				activityText = a_config.labelWorkbenchNamed.Render(FormatValues{ .name = activityName });
+			}
+			else
+			{
+				activityText = MenuActivityLabel(menuActivity, activityLabels);
+			}
+		}
 
 		const FormatValues values{
 			.name = showName ? std::string_view{ a_snapshot.player.name } : std::string_view{},
@@ -195,7 +239,8 @@ namespace Presence
 			.state = state,
 			.target = a_config.showCombatTarget && combatActive_.IsActive() ?
 			              GetCombatTargetName() :
-			              std::string_view{}
+			              std::string_view{},
+			.activity = activityText
 		};
 
 		activity.details = a_config.details.Render(values);
@@ -204,6 +249,10 @@ namespace Presence
 		if (activity.details.empty() && activity.state.empty())
 		{
 			activity.state = level.empty() ? a_config.labelInGame : a_config.labelLevel.Render(values);
+		}
+		if (a_config.showMenuActivity && menuActivity != MenuActivity::kNone)
+		{
+			activity.details = activityText;
 		}
 
 		switch (stateBadge_)
@@ -281,7 +330,12 @@ namespace Presence
 
 		if (state_ == GameState::kInGame)
 		{
+			UpdateMenuActivity(a_snapshot);
 			UpdateStateBadge(a_snapshot, a_config);
+		}
+		else
+		{
+			menuActivity_.Reset();
 		}
 
 		ActivityUpdate activity;

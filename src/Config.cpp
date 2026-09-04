@@ -29,12 +29,13 @@ namespace Config
 	};
 	REX::TTomlSetting<bool> bDebugLogging{ "General"sv, "bDebugLogging"sv, false };
 
-	// name is personal; quest, location, and combat targets are spoilers
+	// name is personal; quest, location, combat targets, and menu activity are spoilers
 	REX::TTomlSetting<bool>        bShowPlayerName{ "Privacy"sv, "bShowPlayerName"sv, false };
 	REX::TTomlSetting<bool>        bShowQuest{ "Privacy"sv, "bShowQuest"sv, true };
 	REX::TTomlSetting<bool>        bShowLocation{ "Privacy"sv, "bShowLocation"sv, true };
 	REX::TTomlSetting<bool>        bShowExactLocation{ "Privacy"sv, "bShowExactLocation"sv, true };
 	REX::TTomlSetting<bool>        bShowCombatTarget{ "Privacy"sv, "bShowCombatTarget"sv, true };
+	REX::TTomlSetting<bool>        bShowMenuActivity{ "Privacy"sv, "bShowMenuActivity"sv, true };
 	REX::TTomlSetting<std::string> sApplicationID{ "Discord"sv, "sApplicationID"sv, "1533687297684537374" };
 
 	REX::TTomlSetting<bool>         bMarkerArtwork{ "Assets"sv, "bMarkerArtwork"sv, true };
@@ -68,6 +69,15 @@ namespace Config
 	REX::TTomlSetting<std::string> sLabelInPowerArmor{ "Labels"sv, "sLabelInPowerArmor"sv, std::string{ Config::kDefaultLabelInPowerArmor } };
 	REX::TTomlSetting<std::string> sLabelIrradiated{ "Labels"sv, "sLabelIrradiated"sv, std::string{ Config::kDefaultLabelIrradiated } };
 	REX::TTomlSetting<std::string> sLabelLevel{ "Labels"sv, "sLabelLevel"sv, std::string{ Config::kDefaultLabelLevelTemplate } };
+	REX::TTomlSetting<std::string> sLabelBarter{ "Labels"sv, "sLabelBarter"sv, std::string{ Config::kDefaultLabelBarter } };
+	REX::TTomlSetting<std::string> sLabelBarterNamed{ "Labels"sv, "sLabelBarterNamed"sv, std::string{ Config::kDefaultLabelBarterNamedTemplate } };
+	REX::TTomlSetting<std::string> sLabelWorkbench{ "Labels"sv, "sLabelWorkbench"sv, std::string{ Config::kDefaultLabelWorkbench } };
+	REX::TTomlSetting<std::string> sLabelWorkbenchNamed{ "Labels"sv, "sLabelWorkbenchNamed"sv, std::string{ Config::kDefaultLabelWorkbenchNamedTemplate } };
+	REX::TTomlSetting<std::string> sLabelWorkshop{ "Labels"sv, "sLabelWorkshop"sv, std::string{ Config::kDefaultLabelWorkshop } };
+	REX::TTomlSetting<std::string> sLabelTerminal{ "Labels"sv, "sLabelTerminal"sv, std::string{ Config::kDefaultLabelTerminal } };
+	REX::TTomlSetting<std::string> sLabelLockpicking{ "Labels"sv, "sLabelLockpicking"sv, std::string{ Config::kDefaultLabelLockpicking } };
+	REX::TTomlSetting<std::string> sLabelSitWait{ "Labels"sv, "sLabelSitWait"sv, std::string{ Config::kDefaultLabelSitWait } };
+	REX::TTomlSetting<std::string> sLabelDialogue{ "Labels"sv, "sLabelDialogue"sv, std::string{ Config::kDefaultLabelDialogue } };
 }
 
 namespace
@@ -305,6 +315,7 @@ namespace Config
 		snapshot->showLocation = bShowLocation.GetValue();
 		snapshot->showExactLocation = bShowExactLocation.GetValue();
 		snapshot->showCombatTarget = bShowCombatTarget.GetValue();
+		snapshot->showMenuActivity = bShowMenuActivity.GetValue();
 		snapshot->markerArtwork = bMarkerArtwork.GetValue();
 		snapshot->stateBadge = bStateBadge.GetValue();
 		snapshot->markerMaxDistance = iMarkerMaxDistance.GetValue();
@@ -330,6 +341,15 @@ namespace Config
 		snapshot->labelInPowerArmor = sLabelInPowerArmor.GetValue();
 		snapshot->labelIrradiated = sLabelIrradiated.GetValue();
 		snapshot->labelLevel = ResolveTemplate(sLabelLevel, kDefaultLabelLevelTemplate, "Labels"sv, "sLabelLevel"sv, previous->labelLevel, a_validation);
+		snapshot->labelBarter = sLabelBarter.GetValue();
+		snapshot->labelBarterNamed = ResolveTemplate(sLabelBarterNamed, kDefaultLabelBarterNamedTemplate, "Labels"sv, "sLabelBarterNamed"sv, previous->labelBarterNamed, a_validation);
+		snapshot->labelWorkbench = sLabelWorkbench.GetValue();
+		snapshot->labelWorkbenchNamed = ResolveTemplate(sLabelWorkbenchNamed, kDefaultLabelWorkbenchNamedTemplate, "Labels"sv, "sLabelWorkbenchNamed"sv, previous->labelWorkbenchNamed, a_validation);
+		snapshot->labelWorkshop = sLabelWorkshop.GetValue();
+		snapshot->labelTerminal = sLabelTerminal.GetValue();
+		snapshot->labelLockpicking = sLabelLockpicking.GetValue();
+		snapshot->labelSitWait = sLabelSitWait.GetValue();
+		snapshot->labelDialogue = sLabelDialogue.GetValue();
 		g_current.store(std::move(snapshot), std::memory_order_release);
 	}
 
@@ -368,6 +388,7 @@ namespace Config
 			WriteOverride(output, bShowLocation, "Privacy"sv, "bShowLocation"sv);
 			WriteOverride(output, bShowExactLocation, "Privacy"sv, "bShowExactLocation"sv);
 			WriteOverride(output, bShowCombatTarget, "Privacy"sv, "bShowCombatTarget"sv);
+			WriteOverride(output, bShowMenuActivity, "Privacy"sv, "bShowMenuActivity"sv);
 			WriteOverride(output, sApplicationID, "Discord"sv, "sApplicationID"sv);
 			WriteOverride(output, bMarkerArtwork, "Assets"sv, "bMarkerArtwork"sv);
 			WriteOverride(output, bStateBadge, "Assets"sv, "bStateBadge"sv);
@@ -394,6 +415,15 @@ namespace Config
 			WriteOverride(output, sLabelInPowerArmor, "Labels"sv, "sLabelInPowerArmor"sv);
 			WriteOverride(output, sLabelIrradiated, "Labels"sv, "sLabelIrradiated"sv);
 			WriteOverride(output, sLabelLevel, "Labels"sv, "sLabelLevel"sv);
+			WriteOverride(output, sLabelBarter, "Labels"sv, "sLabelBarter"sv);
+			WriteOverride(output, sLabelBarterNamed, "Labels"sv, "sLabelBarterNamed"sv);
+			WriteOverride(output, sLabelWorkbench, "Labels"sv, "sLabelWorkbench"sv);
+			WriteOverride(output, sLabelWorkbenchNamed, "Labels"sv, "sLabelWorkbenchNamed"sv);
+			WriteOverride(output, sLabelWorkshop, "Labels"sv, "sLabelWorkshop"sv);
+			WriteOverride(output, sLabelTerminal, "Labels"sv, "sLabelTerminal"sv);
+			WriteOverride(output, sLabelLockpicking, "Labels"sv, "sLabelLockpicking"sv);
+			WriteOverride(output, sLabelSitWait, "Labels"sv, "sLabelSitWait"sv);
+			WriteOverride(output, sLabelDialogue, "Labels"sv, "sLabelDialogue"sv);
 
 			(void)MarkImplicitTables(output);
 			std::filesystem::create_directories(std::filesystem::path{ kCustomPath }.parent_path());

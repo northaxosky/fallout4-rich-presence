@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include "Game/PlayerState.h"
+#include "Presence/MenuActivity.h"
 
 #include <RE/P/PowerArmor.h>
 
@@ -8,6 +9,7 @@
 #include <cmath>
 #include <string>
 #include <string_view>
+#include <utility>
 
 namespace
 {
@@ -20,6 +22,95 @@ namespace
 
 		return std::string_view{ a_name }.find_first_not_of(" \t\n\r\f\v") != std::string_view::npos;
 	}
+
+	[[nodiscard]] std::string CopyVisibleName(const RE::TESFullName* a_fullName)
+	{
+		const auto name = a_fullName ? a_fullName->GetFullName() : nullptr;
+		return HasVisibleName(name) ? std::string{ name } : std::string{};
+	}
+
+	[[nodiscard]] std::string ReadActorBaseName(RE::TESObjectREFR* a_reference)
+	{
+		const auto baseObject = a_reference ? a_reference->GetObjectReference() : nullptr;
+		const auto actorBase = baseObject ? baseObject->As<RE::TESActorBase>() : nullptr;
+		return CopyVisibleName(actorBase);
+	}
+
+	[[nodiscard]] std::string ReadFurnitureBaseName(RE::TESObjectREFR* a_reference)
+	{
+		const auto baseObject = a_reference ? a_reference->GetObjectReference() : nullptr;
+		const auto furniture = baseObject ? baseObject->As<RE::TESFurniture>() : nullptr;
+		return CopyVisibleName(furniture);
+	}
+
+	[[nodiscard]] RE::TESObjectREFR* ResolveHandle(const RE::ObjectRefHandle& a_handle)
+	{
+		const auto reference = a_handle.get();
+		return reference ? reference.get() : nullptr;
+	}
+
+	[[nodiscard]] RE::TESObjectREFR* ReadOccupiedWorkbench(RE::PlayerCharacter& a_player)
+	{
+		if (!a_player.currentProcess)
+		{
+			return nullptr;
+		}
+
+		const auto reference = ResolveHandle(a_player.currentProcess->GetOccupiedFurniture());
+		const auto baseObject = reference ? reference->GetObjectReference() : nullptr;
+		const auto furniture = baseObject ? baseObject->As<RE::TESFurniture>() : nullptr;
+		return furniture && furniture->wbData.type.get() != RE::WorkbenchData::Type::kNone ?
+		           reference :
+		           nullptr;
+	}
+
+	void ReadMenuActivity(
+		Game::PlayerState&   a_state,
+		RE::PlayerCharacter& a_player,
+		const RE::UI&        a_ui)
+	{
+		using Presence::MenuActivity;
+
+		if (a_ui.GetMenuOpen<RE::BarterMenu>())
+		{
+			a_state.menuActivity = std::to_underlying(MenuActivity::kBarter);
+			const auto menu = a_ui.GetMenu<RE::BarterMenu>();
+			if (menu)
+			{
+				a_state.menuActivityName = ReadActorBaseName(ResolveHandle(menu->vendorActor));
+			}
+			return;
+		}
+
+		// WorkbenchMenuBase has no menu name, so occupied workbench furniture is the stable signal.
+		if (const auto workbench = ReadOccupiedWorkbench(a_player))
+		{
+			a_state.menuActivity = std::to_underlying(MenuActivity::kWorkbench);
+			a_state.menuActivityName = ReadFurnitureBaseName(workbench);
+			return;
+		}
+
+		if (a_ui.GetMenuOpen<RE::WorkshopMenu>())
+		{
+			a_state.menuActivity = std::to_underlying(MenuActivity::kWorkshop);
+		}
+		else if (a_ui.GetMenuOpen<RE::TerminalMenu>())
+		{
+			a_state.menuActivity = std::to_underlying(MenuActivity::kTerminal);
+		}
+		else if (a_ui.GetMenuOpen<RE::LockpickingMenu>())
+		{
+			a_state.menuActivity = std::to_underlying(MenuActivity::kLockpicking);
+		}
+		else if (a_ui.GetMenuOpen<RE::SitWaitMenu>())
+		{
+			a_state.menuActivity = std::to_underlying(MenuActivity::kSitWait);
+		}
+		else if (a_ui.GetMenuOpen<RE::DialogueMenu>())
+		{
+			a_state.menuActivity = std::to_underlying(MenuActivity::kDialogue);
+		}
+	}
 }
 
 namespace Game
@@ -28,7 +119,8 @@ namespace Game
 	{
 		PlayerState state;
 
-		if (const auto ui = RE::UI::GetSingleton())
+		const auto ui = RE::UI::GetSingleton();
+		if (ui)
 		{
 			state.inMainMenu = ui->GetMenuOpen<RE::MainMenu>();
 			state.inLoadingMenu = ui->GetMenuOpen<RE::LoadingMenu>();
@@ -38,6 +130,11 @@ namespace Game
 		if (!a_player || !a_sessionActive)
 		{
 			return state;
+		}
+
+		if (ui && !state.inMainMenu && !state.inLoadingMenu)
+		{
+			ReadMenuActivity(state, *a_player, *ui);
 		}
 
 		// GetDisplayFullName allocates from the ScrapHeap; the base NPC name is the safe path
@@ -60,16 +157,7 @@ namespace Game
 			{
 				state.combatTargetID = target->GetFormID();
 
-				const auto baseObject = target->GetObjectReference();
-				const auto actorBase = baseObject ? baseObject->As<RE::TESActorBase>() : nullptr;
-				if (actorBase)
-				{
-					const auto name = actorBase->GetFullName();
-					if (HasVisibleName(name))
-					{
-						state.combatTargetName = name;
-					}
-				}
+				state.combatTargetName = ReadActorBaseName(target.get());
 			}
 		}
 		state.inPowerArmor = RE::PowerArmor::PlayerInPowerArmor();

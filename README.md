@@ -25,9 +25,9 @@ xmake build
 ```
 
 The plugin builds to `build/windows/x64/release/Fallout4RichPresence.dll`.
-Run the unit tests with `xmake build FormatTemplateTests MarkerAssetTests StateBadgeTests`,
-followed by `xmake run FormatTemplateTests`, `xmake run MarkerAssetTests`, and
-`xmake run StateBadgeTests`.
+Run the unit tests with
+`xmake build FormatTemplateTests MarkerAssetTests StateBadgeTests MenuActivityTests`,
+followed by `xmake run` for each target.
 
 ## Packaging
 
@@ -70,6 +70,7 @@ exactly one configuration preset. For a manual installation, copy the DLL and on
 | Privacy | `bShowLocation` | `true` | Makes `{worldspace}` available and permits location data. |
 | Privacy | `bShowExactLocation` | `true` | Makes `{location}` available when location data is permitted. |
 | Privacy | `bShowCombatTarget` | `true` | Makes `{target}` available while in combat. |
+| Privacy | `bShowMenuActivity` | `true` | Makes `{activity}` available and replaces details with the active menu activity. |
 | Discord | `sApplicationID` | `"1533687297684537374"` | Discord application ID. |
 | Assets | `bMarkerArtwork` | `true` | Uses nearby discovered map-marker artwork during gameplay. |
 | Assets | `bStateBadge` | `true` | Enables power-armor and irradiated state badges. |
@@ -96,6 +97,15 @@ exactly one configuration preset. For a manual installation, copy the DLL and on
 | Labels | `sLabelInPowerArmor` | `"In Power Armor"` | Power-armor label. |
 | Labels | `sLabelIrradiated` | `"Irradiated"` | Irradiated label. |
 | Labels | `sLabelLevel` | `"Level {level}"` | In-game fallback when details and state are empty. |
+| Labels | `sLabelBarter` | `"Trading"` | Barter activity without a vendor name. |
+| Labels | `sLabelBarterNamed` | `"Trading with {name}"` | Barter activity with a vendor name. |
+| Labels | `sLabelWorkbench` | `"Using a Workbench"` | Workbench activity without a furniture name. |
+| Labels | `sLabelWorkbenchNamed` | `"Using the {name}"` | Workbench activity with a furniture name. |
+| Labels | `sLabelWorkshop` | `"Building"` | Workshop building activity. |
+| Labels | `sLabelTerminal` | `"Using a Terminal"` | Terminal activity. |
+| Labels | `sLabelLockpicking` | `"Lockpicking"` | Lockpicking activity. |
+| Labels | `sLabelSitWait` | `"Waiting"` | Sit/wait activity. |
+| Labels | `sLabelDialogue` | `"Talking"` | Dialogue activity. |
 
 An asset key may be empty to show no image for that slot. A small image identical to the large
 image is suppressed, so a single uploaded asset renders one icon rather than a duplicated badge;
@@ -106,6 +116,15 @@ Each state must be observed for two consecutive samples before it changes. Disab
 `bStateBadge` restores the original combat-or-player badge behavior.
 Combat targets are also debounced by actor identity: a target must be observed twice
 consecutively before its name changes, and the previous name remains while a new target settles.
+
+Menu activity reports barter, workbenches, workshop building, terminals, lockpicking, waiting, and
+dialogue. Barter and workbench activity uses the vendor or occupied furniture name when a safe base
+form name is available. Terminals are deliberately generic because the game exposes no safe terminal
+name source. Pip-Boy and its sub-menus, containers, and standalone inventory examination are excluded
+to avoid presence churn; workbenches are identified from the player's occupied furniture rather than
+the examine menu. Activity and name changes must be observed for two consecutive samples; leaving an
+activity clears it immediately. When `bShowMenuActivity` is true, active menu text replaces the
+details line after normal template rendering. Other presence fields are unchanged.
 
 During gameplay, marker artwork uses the nearest discovered Pip-Boy map marker within
 `iMarkerMaxDistance`. It is disabled when either `bMarkerArtwork` or `bShowLocation` is false,
@@ -139,7 +158,7 @@ the installed preset and saves the result.
 | Preset | Gameplay text |
 | --- | --- |
 | Default | Quest, objective, location, worldspace, and level; player name hidden. |
-| Spoiler-free | Worldspace and level; quest, objective, exact location, player name, combat target, and marker artwork hidden. |
+| Spoiler-free | Worldspace and level; quest, objective, exact location, player name, combat target, menu activity, and marker artwork hidden. |
 | Full | Quest, objective, location, worldspace, player name, and level. |
 | Minimal | Level only. |
 
@@ -150,10 +169,13 @@ higher-priority mod.
 ### Format templates
 
 The in-game format keys accept `{name}`, `{level}`, `{quest}`, `{objective}`, `{location}`,
-`{worldspace}`, `{state}`, and `{target}`. `{state}` resolves to `In Game`, `In Combat`,
+`{worldspace}`, `{state}`, `{target}`, and `{activity}`. `{state}` resolves to `In Game`, `In Combat`,
 `In Power Armor`, or `Irradiated` according to the active badge. `{target}` resolves to the
 debounced combat target name and is empty outside combat, when no safe name is available, or
-when `bShowCombatTarget` is false. These state labels and the fixed-state text come from
+when `bShowCombatTarget` is false. `{activity}` resolves to the debounced menu activity text and is
+empty outside a reported menu or when `bShowMenuActivity` is false. The named barter and workbench
+labels are templates whose `{name}` token is resolved in a separate activity-label render context,
+not from the player name. These state labels and the fixed-state text come from
 `[Labels]`; `sLabelLevel` is also a template and accepts `{level}`.
 
 Hidden or unavailable values resolve to empty. An empty token joins the separator runs on either

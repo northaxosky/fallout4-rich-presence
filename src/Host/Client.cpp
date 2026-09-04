@@ -28,7 +28,7 @@ namespace Host
 		inline constexpr auto kClientID = "dearmodding.richpresence";
 		inline constexpr auto kClientDisplayName = "Rich Presence";
 		inline constexpr auto kClientIcon = "gauge";
-		inline constexpr auto kFormatTokens = "Available tokens: {name} {level} {quest} {objective} {location} {worldspace} {state} {target}.";
+		inline constexpr auto kFormatTokens = "Available tokens: {name} {level} {quest} {objective} {location} {worldspace} {state} {target} {activity}.";
 		inline constexpr auto kAssetDescription = "Use 1-32 lowercase ASCII letters, digits, or underscores, or leave empty for no image.";
 
 		enum class SettingSlot : std::size_t
@@ -41,6 +41,7 @@ namespace Host
 			kShowLocation,
 			kShowExactLocation,
 			kShowCombatTarget,
+			kShowMenuActivity,
 			kApplicationID,
 			kMarkerArtwork,
 			kStateBadge,
@@ -67,6 +68,15 @@ namespace Host
 			kLabelInPowerArmor,
 			kLabelIrradiated,
 			kLabelLevel,
+			kLabelBarter,
+			kLabelBarterNamed,
+			kLabelWorkbench,
+			kLabelWorkbenchNamed,
+			kLabelWorkshop,
+			kLabelTerminal,
+			kLabelLockpicking,
+			kLabelSitWait,
+			kLabelDialogue,
 			kCount
 		};
 
@@ -104,6 +114,7 @@ namespace Host
 			CaptureValue(SettingSlot::kShowLocation, Config::bShowLocation);
 			CaptureValue(SettingSlot::kShowExactLocation, Config::bShowExactLocation);
 			CaptureValue(SettingSlot::kShowCombatTarget, Config::bShowCombatTarget);
+			CaptureValue(SettingSlot::kShowMenuActivity, Config::bShowMenuActivity);
 			CaptureValue(SettingSlot::kApplicationID, Config::sApplicationID);
 			CaptureValue(SettingSlot::kMarkerArtwork, Config::bMarkerArtwork);
 			CaptureValue(SettingSlot::kStateBadge, Config::bStateBadge);
@@ -131,6 +142,15 @@ namespace Host
 			CaptureValue(SettingSlot::kLabelInPowerArmor, Config::sLabelInPowerArmor);
 			CaptureValue(SettingSlot::kLabelIrradiated, Config::sLabelIrradiated);
 			CaptureValue(SettingSlot::kLabelLevel, Config::sLabelLevel);
+			CaptureValue(SettingSlot::kLabelBarter, Config::sLabelBarter);
+			CaptureValue(SettingSlot::kLabelBarterNamed, Config::sLabelBarterNamed);
+			CaptureValue(SettingSlot::kLabelWorkbench, Config::sLabelWorkbench);
+			CaptureValue(SettingSlot::kLabelWorkbenchNamed, Config::sLabelWorkbenchNamed);
+			CaptureValue(SettingSlot::kLabelWorkshop, Config::sLabelWorkshop);
+			CaptureValue(SettingSlot::kLabelTerminal, Config::sLabelTerminal);
+			CaptureValue(SettingSlot::kLabelLockpicking, Config::sLabelLockpicking);
+			CaptureValue(SettingSlot::kLabelSitWait, Config::sLabelSitWait);
+			CaptureValue(SettingSlot::kLabelDialogue, Config::sLabelDialogue);
 		}
 
 		template <dmui::SettingValueAlternative T>
@@ -330,6 +350,7 @@ namespace Host
 			RestoreDefault(Config::bShowLocation);
 			RestoreDefault(Config::bShowExactLocation);
 			RestoreDefault(Config::bShowCombatTarget);
+			RestoreDefault(Config::bShowMenuActivity);
 			RestoreDefault(Config::sApplicationID);
 			RestoreDefault(Config::bMarkerArtwork);
 			RestoreDefault(Config::bStateBadge);
@@ -356,6 +377,15 @@ namespace Host
 			RestoreDefault(Config::sLabelInPowerArmor);
 			RestoreDefault(Config::sLabelIrradiated);
 			RestoreDefault(Config::sLabelLevel);
+			RestoreDefault(Config::sLabelBarter);
+			RestoreDefault(Config::sLabelBarterNamed);
+			RestoreDefault(Config::sLabelWorkbench);
+			RestoreDefault(Config::sLabelWorkbenchNamed);
+			RestoreDefault(Config::sLabelWorkshop);
+			RestoreDefault(Config::sLabelTerminal);
+			RestoreDefault(Config::sLabelLockpicking);
+			RestoreDefault(Config::sLabelSitWait);
+			RestoreDefault(Config::sLabelDialogue);
 			Config::Rebuild();
 			Logging::Configure();
 			if (Config::SaveOverrides())
@@ -439,6 +469,13 @@ namespace Host
 				"Show combat target",
 				"Makes {target} available to templates while in combat.",
 				Config::bShowCombatTarget,
+				checkbox));
+			group.settings.push_back(MakeSetting(
+				SettingSlot::kShowMenuActivity,
+				"bShowMenuActivity",
+				"Show menu activity",
+				"Makes {activity} available and replaces details with the active menu activity.",
+				Config::bShowMenuActivity,
 				checkbox));
 			return group;
 		}
@@ -656,6 +693,78 @@ namespace Host
 				"Fallback when gameplay details and state are empty. Available token: {level}.",
 				Config::sLabelLevel,
 				templateText,
+				dmui::SettingApplyTiming::kImmediate));
+			group.settings.push_back(MakeSetting(
+				SettingSlot::kLabelBarter,
+				"sLabelBarter",
+				"Barter",
+				"Barter activity when no vendor name is available.",
+				Config::sLabelBarter,
+				text,
+				dmui::SettingApplyTiming::kImmediate));
+			group.settings.push_back(MakeSetting(
+				SettingSlot::kLabelBarterNamed,
+				"sLabelBarterNamed",
+				"Named barter",
+				"Barter activity with a vendor name. Available token: {name}.",
+				Config::sLabelBarterNamed,
+				templateText,
+				dmui::SettingApplyTiming::kImmediate));
+			group.settings.push_back(MakeSetting(
+				SettingSlot::kLabelWorkbench,
+				"sLabelWorkbench",
+				"Workbench",
+				"Workbench activity when no furniture name is available.",
+				Config::sLabelWorkbench,
+				text,
+				dmui::SettingApplyTiming::kImmediate));
+			group.settings.push_back(MakeSetting(
+				SettingSlot::kLabelWorkbenchNamed,
+				"sLabelWorkbenchNamed",
+				"Named workbench",
+				"Workbench activity with a furniture name. Available token: {name}.",
+				Config::sLabelWorkbenchNamed,
+				templateText,
+				dmui::SettingApplyTiming::kImmediate));
+			group.settings.push_back(MakeSetting(
+				SettingSlot::kLabelWorkshop,
+				"sLabelWorkshop",
+				"Workshop",
+				"Workshop building activity.",
+				Config::sLabelWorkshop,
+				text,
+				dmui::SettingApplyTiming::kImmediate));
+			group.settings.push_back(MakeSetting(
+				SettingSlot::kLabelTerminal,
+				"sLabelTerminal",
+				"Terminal",
+				"Terminal activity.",
+				Config::sLabelTerminal,
+				text,
+				dmui::SettingApplyTiming::kImmediate));
+			group.settings.push_back(MakeSetting(
+				SettingSlot::kLabelLockpicking,
+				"sLabelLockpicking",
+				"Lockpicking",
+				"Lockpicking activity.",
+				Config::sLabelLockpicking,
+				text,
+				dmui::SettingApplyTiming::kImmediate));
+			group.settings.push_back(MakeSetting(
+				SettingSlot::kLabelSitWait,
+				"sLabelSitWait",
+				"Sit/wait",
+				"Sit/wait activity.",
+				Config::sLabelSitWait,
+				text,
+				dmui::SettingApplyTiming::kImmediate));
+			group.settings.push_back(MakeSetting(
+				SettingSlot::kLabelDialogue,
+				"sLabelDialogue",
+				"Dialogue",
+				"Dialogue activity.",
+				Config::sLabelDialogue,
+				text,
 				dmui::SettingApplyTiming::kImmediate));
 			return group;
 		}

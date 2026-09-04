@@ -115,6 +115,9 @@ int main()
 	auto targetOnly = emptyValues;
 	targetOnly.target = "Deathclaw";
 
+	auto activityOnly = emptyValues;
+	activityOnly.activity = "Trading with Trashcan Carla";
+
 	auto questAndLocation = questOnly;
 	questAndLocation.location = "Diamond City";
 
@@ -145,6 +148,9 @@ int main()
 	// consistent with "all tokens empty" below: the combat fallback lives in StateMachine, not here
 	passed &= Check("empty combat target", "Fighting {target}", emptyValues, "");
 	passed &= Check("empty target separator", "{quest} - {target}", questOnly, "Reunions");
+	passed &= Check("menu activity", "{activity}", activityOnly, "Trading with Trashcan Carla");
+	passed &= Check("empty activity separator", "{quest} - {activity}", questOnly, "Reunions");
+	passed &= Check("empty menu activity", "Doing {activity}", emptyValues, "");
 	passed &= Check("empty leading name", "{name} - {level}", levelOnly, "12");
 	passed &= Check("populated separators", "{quest}: {objective}", fullValues, "Reunions: Find Nick Valentine");
 	passed &= Check("all tokens empty label", "Quest: {quest}", emptyValues, "");
@@ -160,6 +166,7 @@ int main()
 	passed &= Check("UTF-8 words preserved", "世界{name}{level}", levelOnly, "世界12");
 	passed &= Rejects("unknown token", "{unknown}");
 	passed &= Compiles("target token", "{target}");
+	passed &= Compiles("activity token", "{activity}");
 	passed &= Rejects("unmatched opening brace", "{name");
 	passed &= Rejects("unmatched closing brace", "name}");
 	passed &= Compiles("source length limit", std::string(Presence::kFormatTemplateSourceLimit, 'x'));

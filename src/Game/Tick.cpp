@@ -8,6 +8,7 @@
 #include "Game/Snapshot.h"
 #include "Game/Tick.h"
 #include "Presence/Mailbox.h"
+#include "Presence/MenuActivity.h"
 #include "Presence/StateMachine.h"
 
 #include <algorithm>
@@ -147,7 +148,7 @@ namespace
 			return;
 		}
 
-		REX::DEBUG("#{} presence={} holding={} sessionActive={} quest='{}' objective='{}' priority={} location='{}' worldspace='{}' markerType={} largeImage='{}' level={} badge={} combatRaw={} combatStable={} targetRaw='{}' targetRawID=0x{:08X} targetStable='{}' targetStableID=0x{:08X} powerArmorRaw={} radsFraction={:.3f} mainMenu={} loadingMenu={} looksMenu={} charGenFlag={} nameTrusted={}",
+		REX::DEBUG("#{} presence={} holding={} sessionActive={} quest='{}' objective='{}' priority={} location='{}' worldspace='{}' markerType={} largeImage='{}' level={} badge={} combatRaw={} combatStable={} targetRaw='{}' targetRawID=0x{:08X} targetStable='{}' targetStableID=0x{:08X} activityRaw={} activityRawName='{}' activityStable={} activityStableName='{}' powerArmorRaw={} radsFraction={:.3f} mainMenu={} loadingMenu={} looksMenu={} charGenFlag={} nameTrusted={}",
 			g_tickState.tickCount,
 			Presence::ToString(g_stateMachine.GetState()),
 			g_stateMachine.IsHoldingActivity(),
@@ -167,6 +168,10 @@ namespace
 			snapshot.player.combatTargetID,
 			g_stateMachine.GetCombatTargetName(),
 			g_stateMachine.GetCombatTargetID(),
+			Presence::ToString(static_cast<Presence::MenuActivity>(snapshot.player.menuActivity)),
+			snapshot.player.menuActivityName,
+			Presence::ToString(g_stateMachine.GetMenuActivity()),
+			g_stateMachine.GetMenuActivityName(),
 			snapshot.player.inPowerArmor,
 			snapshot.player.radsFraction,
 			snapshot.player.inMainMenu,

@@ -17,6 +17,8 @@ namespace Game
 		std::uint32_t combatTargetID{ 0 };
 		std::int16_t  level{ 0 };
 		std::int8_t   charGenFlag{ 0 };
+		std::uint8_t  menuActivity{ 0 };
+		std::string   menuActivityName;
 		float         radsFraction{ 0.0F };
 		bool          inCombat{ false };
 		bool          inPowerArmor{ false };

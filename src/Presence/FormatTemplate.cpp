@@ -231,6 +231,10 @@ namespace
 		{
 			return FormatToken::kTarget;
 		}
+		if (a_token == "activity")
+		{
+			return FormatToken::kActivity;
+		}
 
 		return std::unexpected(Presence::FormatTemplateError{
 			.position = a_position,
@@ -257,6 +261,8 @@ namespace
 				return a_values.state;
 			case Presence::FormatToken::kTarget:
 				return a_values.target;
+			case Presence::FormatToken::kActivity:
+				return a_values.activity;
 		}
 
 		return {};

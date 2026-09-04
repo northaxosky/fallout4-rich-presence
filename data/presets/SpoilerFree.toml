@@ -11,6 +11,7 @@ bShowQuest = false
 bShowLocation = true
 bShowExactLocation = false
 bShowCombatTarget = false
+bShowMenuActivity = false
 
 [Discord]
 sApplicationID = "1533687297684537374"
@@ -45,3 +46,12 @@ sLabelInCombat = "In Combat"
 sLabelInPowerArmor = "In Power Armor"
 sLabelIrradiated = "Irradiated"
 sLabelLevel = "Level {level}"
+sLabelBarter = "Trading"
+sLabelBarterNamed = "Trading with {name}"
+sLabelWorkbench = "Using a Workbench"
+sLabelWorkbenchNamed = "Using the {name}"
+sLabelWorkshop = "Building"
+sLabelTerminal = "Using a Terminal"
+sLabelLockpicking = "Lockpicking"
+sLabelSitWait = "Waiting"
+sLabelDialogue = "Talking"

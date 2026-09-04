@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Presence/Activity.h"
+#include "Presence/MenuActivity.h"
 #include "Presence/StateBadge.h"
 
 #include <chrono>
@@ -77,6 +78,8 @@ namespace Presence
 		[[nodiscard]] bool             IsCombatActive() const noexcept { return combatActive_.IsActive(); }
 		[[nodiscard]] std::uint32_t    GetCombatTargetID() const noexcept { return combatTarget_.Get().id; }
 		[[nodiscard]] std::string_view GetCombatTargetName() const noexcept { return combatTarget_.Get().name; }
+		[[nodiscard]] MenuActivity     GetMenuActivity() const noexcept { return menuActivity_.Get().activity; }
+		[[nodiscard]] std::string_view GetMenuActivityName() const noexcept { return menuActivity_.Get().name; }
 		[[nodiscard]] StateBadge       GetStateBadge() const noexcept { return stateBadge_; }
 		[[nodiscard]] bool             IsHoldingActivity() const noexcept { return holdActivity_; }
 
@@ -84,21 +87,23 @@ namespace Presence
 		[[nodiscard]] GameState DetectState(const Game::Snapshot& a_snapshot);
 		[[nodiscard]] Activity  BuildInGame(const Game::Snapshot& a_snapshot, const Config::Snapshot& a_config, std::int64_t a_startTimestamp, bool a_nameTrusted) const;
 		void                    EndSession() noexcept;
+		void                    UpdateMenuActivity(const Game::Snapshot& a_snapshot);
 		void                    UpdateStateBadge(const Game::Snapshot& a_snapshot, const Config::Snapshot& a_config);
 
-		GameState                        state_{ GameState::kUnknown };
-		std::optional<Clock::time_point> nameTrustedAt_;
-		bool                             sessionActive_{ false };
-		bool                             awaitingMainMenuClose_{ false };
-		bool                             loadingObserved_{ false };
-		std::uint8_t                     loadingSamples_{ 0 };
-		std::uint8_t                     loadingExitSamples_{ 0 };
-		DebouncedFlag                    combatActive_;
-		DebouncedValue<CombatTarget>     combatTarget_;
-		DebouncedFlag                    powerArmorActive_;
-		DebouncedFlag                    irradiatedActive_;
-		StateBadge                       stateBadge_{ StateBadge::kNone };
-		bool                             holdActivity_{ false };
-		ActivityUpdate                   lastActivity_;
+		GameState                         state_{ GameState::kUnknown };
+		std::optional<Clock::time_point>  nameTrustedAt_;
+		bool                              sessionActive_{ false };
+		bool                              awaitingMainMenuClose_{ false };
+		bool                              loadingObserved_{ false };
+		std::uint8_t                      loadingSamples_{ 0 };
+		std::uint8_t                      loadingExitSamples_{ 0 };
+		DebouncedFlag                     combatActive_;
+		DebouncedValue<CombatTarget>      combatTarget_;
+		DebouncedValue<MenuActivityValue> menuActivity_;
+		DebouncedFlag                     powerArmorActive_;
+		DebouncedFlag                     irradiatedActive_;
+		StateBadge                        stateBadge_{ StateBadge::kNone };
+		bool                              holdActivity_{ false };
+		ActivityUpdate                    lastActivity_;
 	};
 }
