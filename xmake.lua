@@ -3,7 +3,7 @@ includes("lib/commonlibf4")
 
 -- name and version
 local plugin_name = "Fallout4RichPresence"
-local plugin_version = "0.1.0"
+local plugin_version = "1.0.0"
 local plugin_version_major, plugin_version_minor, plugin_version_patch = plugin_version:match("^(%d+)%.(%d+)%.(%d+)$")
 
 -- mod manager folder for xmake install, joined onto FO4_DEV_MODS
@@ -107,7 +107,11 @@ task("package", function()
         os.cp("data/presets", root)
         os.cp("data/fomod", root)
 
-        cprint("${bright green}packaged${clear} %s", path.absolute(root))
+        -- stamp the version so info.xml cannot drift from set_version
+        local info = path.join(root, "fomod", "info.xml")
+        io.writefile(info, (io.readfile(info):gsub("%${VERSION}", plugin_version)))
+
+        cprint("${bright green}packaged${clear} %s ${dim}(v%s)${clear}", path.absolute(root), plugin_version)
     end)
 end)
 

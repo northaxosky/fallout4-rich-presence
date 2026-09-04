@@ -2,7 +2,7 @@
 <fomod>
 	<Name>Fallout 4 Rich Presence</Name>
 	<Author>Kuz</Author>
-	<Version>0.1.0</Version>
+	<Version>${VERSION}</Version>
 	<Website>https://github.com/northaxosky/fallout4-rich-presence</Website>
 	<Description>Discord Rich Presence for Fallout 4.</Description>
 	<Groups>
