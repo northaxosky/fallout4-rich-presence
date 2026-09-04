@@ -69,6 +69,7 @@ exactly one configuration preset. For a manual installation, copy the DLL and on
 | Privacy | `bShowQuest` | `true` | Makes `{quest}` and `{objective}` available. |
 | Privacy | `bShowLocation` | `true` | Makes `{worldspace}` available and permits location data. |
 | Privacy | `bShowExactLocation` | `true` | Makes `{location}` available when location data is permitted. |
+| Privacy | `bShowCombatTarget` | `true` | Makes `{target}` available while in combat. |
 | Discord | `sApplicationID` | `"1533687297684537374"` | Discord application ID. |
 | Assets | `bMarkerArtwork` | `true` | Uses nearby discovered map-marker artwork during gameplay. |
 | Assets | `bStateBadge` | `true` | Enables power-armor and irradiated state badges. |
@@ -85,7 +86,7 @@ exactly one configuration preset. For a manual installation, copy the DLL and on
 | Format | `sState` | `"{location} - {worldspace}"` | In-game state line. |
 | Format | `sLargeText` | `"{objective}"` | In-game large-image tooltip. |
 | Format | `sSmallText` | `"{name} - Level {level}"` | Normal in-game small-image tooltip. |
-| Format | `sCombatSmallText` | `"{state}"` | Combat small-image tooltip. |
+| Format | `sCombatSmallText` | `"Fighting {target}"` | Combat small-image tooltip. |
 
 An asset key may be empty to show no image for that slot. A small image identical to the large
 image is suppressed, so a single uploaded asset renders one icon rather than a duplicated badge;
@@ -94,6 +95,8 @@ upload distinct art and the badge appears with no configuration change.
 State badges use the first active state in this order: combat, power armor, then irradiated.
 Each state must be observed for two consecutive samples before it changes. Disabling
 `bStateBadge` restores the original combat-or-player badge behavior.
+Combat targets are also debounced by actor identity: a target must be observed twice
+consecutively before its name changes, and the previous name remains while a new target settles.
 
 During gameplay, marker artwork uses the nearest discovered Pip-Boy map marker within
 `iMarkerMaxDistance`. It is disabled when either `bMarkerArtwork` or `bShowLocation` is false,
@@ -125,7 +128,7 @@ the installed preset and saves the result.
 | Preset | Gameplay text |
 | --- | --- |
 | Default | Quest, objective, location, worldspace, and level; player name hidden. |
-| Spoiler-free | Worldspace and level; quest, objective, exact location, player name, and marker artwork hidden. |
+| Spoiler-free | Worldspace and level; quest, objective, exact location, player name, combat target, and marker artwork hidden. |
 | Full | Quest, objective, location, worldspace, player name, and level. |
 | Minimal | Level only. |
 
@@ -136,9 +139,10 @@ higher-priority mod.
 ### Format templates
 
 The in-game format keys accept `{name}`, `{level}`, `{quest}`, `{objective}`, `{location}`,
-`{worldspace}`, and `{state}`. `{state}` resolves to `In Game`, `In Combat`, `In Power Armor`,
-or `Irradiated` according to the active badge. Main-menu, loading, and character-creation labels
-remain fixed.
+`{worldspace}`, `{state}`, and `{target}`. `{state}` resolves to `In Game`, `In Combat`,
+`In Power Armor`, or `Irradiated` according to the active badge. `{target}` resolves to the
+debounced combat target name and is empty outside combat, when no safe name is available, or
+when `bShowCombatTarget` is false. Main-menu, loading, and character-creation labels remain fixed.
 
 Hidden or unavailable values resolve to empty. An empty token joins the separator runs on either
 side into one boundary, then whitespace is collapsed without splitting UTF-8 code points. If
@@ -147,6 +151,9 @@ whitespace normalization. For example,
 `{quest} - {objective} - {location}` becomes `Reunions - Diamond City` when the objective is
 missing. Sources over 512 bytes, unknown tokens, and unbalanced braces fall back to that key's
 compiled-in default.
+
+The combat tooltip is the one field with a fallback: when `sCombatSmallText` renders empty,
+because no target name is available, the badge is labelled `In Combat` rather than left untitled.
 
 The Discord worker is intentionally leaked until process exit because F4SE provides no safe plugin shutdown callback.
 
@@ -157,7 +164,8 @@ Set `bDebugLogging = true` in `Fallout4RichPresenceCustom.toml`, then inspect
 
 1. Cold-launch to the title screen. Every sample before and at the main menu must show `sessionActive=false`, and `presence=in_game` must never appear.
 2. Load a save, then quit back to the title screen. A successful load must change `sessionActive` to `true`; the first observed main-menu sample must change it back to `false`, with no previous quest or location published afterward.
-3. Enter and leave combat. `combatStable` must change only after two consecutive equal `combatRaw` samples.
+3. Enter and leave combat. `combatStable` must change only after two consecutive equal `combatRaw`
+   samples; a new `targetStableID` must likewise require two consecutive `targetRawID` samples.
 4. Use an interior door that closes within one sample. It must log `holding=true` without publishing the loading activity; a loading menu must persist for two samples before becoming visible.
 5. For chargen settling only, also set `bShowPlayerName = true` and `iSamplingIntervalMs = 50`. After the Looks menu closes, `nameTrusted` must remain `false` for at least 200 ms before becoming `true`.
 

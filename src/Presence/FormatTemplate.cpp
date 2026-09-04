@@ -227,6 +227,10 @@ namespace
 		{
 			return FormatToken::kState;
 		}
+		if (a_token == "target")
+		{
+			return FormatToken::kTarget;
+		}
 
 		return std::unexpected(Presence::FormatTemplateError{
 			.position = a_position,
@@ -251,6 +255,8 @@ namespace
 				return a_values.worldspace;
 			case Presence::FormatToken::kState:
 				return a_values.state;
+			case Presence::FormatToken::kTarget:
+				return a_values.target;
 		}
 
 		return {};

@@ -29,7 +29,7 @@ namespace Config
 	inline constexpr std::string_view kDefaultStateTemplate = "{location} - {worldspace}";
 	inline constexpr std::string_view kDefaultLargeTextTemplate = "{objective}";
 	inline constexpr std::string_view kDefaultSmallTextTemplate = "{name} - Level {level}";
-	inline constexpr std::string_view kDefaultCombatSmallTextTemplate = "{state}";
+	inline constexpr std::string_view kDefaultCombatSmallTextTemplate = "Fighting {target}";
 
 	extern REX::TTomlSetting<std::int32_t> iSamplingIntervalMs;
 	extern REX::TTomlSetting<std::int32_t> iIrradiatedPercent;
@@ -38,6 +38,7 @@ namespace Config
 	extern REX::TTomlSetting<bool>         bShowQuest;
 	extern REX::TTomlSetting<bool>         bShowLocation;
 	extern REX::TTomlSetting<bool>         bShowExactLocation;
+	extern REX::TTomlSetting<bool>         bShowCombatTarget;
 	extern REX::TTomlSetting<std::string>  sApplicationID;
 	extern REX::TTomlSetting<bool>         bMarkerArtwork;
 	extern REX::TTomlSetting<bool>         bStateBadge;
@@ -65,6 +66,7 @@ namespace Config
 		bool                       showQuest{ true };
 		bool                       showLocation{ true };
 		bool                       showExactLocation{ true };
+		bool                       showCombatTarget{ true };
 		bool                       markerArtwork{ true };
 		bool                       stateBadge{ true };
 		std::int32_t               markerMaxDistance{ kDefaultMarkerMaxDistance };

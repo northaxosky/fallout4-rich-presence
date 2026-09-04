@@ -10,6 +10,7 @@ bShowPlayerName = false
 bShowQuest = false
 bShowLocation = true
 bShowExactLocation = false
+bShowCombatTarget = false
 
 [Discord]
 sApplicationID = "1533687297684537374"

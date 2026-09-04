@@ -152,7 +152,7 @@ namespace
 			return;
 		}
 
-		REX::DEBUG("#{} presence={} holding={} sessionActive={} quest='{}' objective='{}' priority={} location='{}' worldspace='{}' markerType={} largeImage='{}' level={} badge={} combatRaw={} combatStable={} powerArmorRaw={} radsFraction={:.3f} mainMenu={} loadingMenu={} looksMenu={} charGenFlag={} nameTrusted={}",
+		REX::DEBUG("#{} presence={} holding={} sessionActive={} quest='{}' objective='{}' priority={} location='{}' worldspace='{}' markerType={} largeImage='{}' level={} badge={} combatRaw={} combatStable={} targetRaw='{}' targetRawID=0x{:08X} targetStable='{}' targetStableID=0x{:08X} powerArmorRaw={} radsFraction={:.3f} mainMenu={} loadingMenu={} looksMenu={} charGenFlag={} nameTrusted={}",
 			g_tickState.tickCount,
 			Presence::ToString(g_stateMachine.GetState()),
 			g_stateMachine.IsHoldingActivity(),
@@ -168,6 +168,10 @@ namespace
 			Presence::ToString(g_stateMachine.GetStateBadge()),
 			snapshot.player.inCombat,
 			g_stateMachine.IsCombatActive(),
+			snapshot.player.combatTargetName,
+			snapshot.player.combatTargetID,
+			g_stateMachine.GetCombatTargetName(),
+			g_stateMachine.GetCombatTargetID(),
 			snapshot.player.inPowerArmor,
 			snapshot.player.radsFraction,
 			snapshot.player.inMainMenu,

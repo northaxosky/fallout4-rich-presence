@@ -29,11 +29,12 @@ namespace Config
 	};
 	REX::TTomlSetting<bool> bDebugLogging{ "General"sv, "bDebugLogging"sv, false };
 
-	// name is personal, quest and location are spoilers; the shipped preset opts into the latter two
+	// name is personal; quest, location, and combat targets are spoilers
 	REX::TTomlSetting<bool>        bShowPlayerName{ "Privacy"sv, "bShowPlayerName"sv, false };
 	REX::TTomlSetting<bool>        bShowQuest{ "Privacy"sv, "bShowQuest"sv, true };
 	REX::TTomlSetting<bool>        bShowLocation{ "Privacy"sv, "bShowLocation"sv, true };
 	REX::TTomlSetting<bool>        bShowExactLocation{ "Privacy"sv, "bShowExactLocation"sv, true };
+	REX::TTomlSetting<bool>        bShowCombatTarget{ "Privacy"sv, "bShowCombatTarget"sv, true };
 	REX::TTomlSetting<std::string> sApplicationID{ "Discord"sv, "sApplicationID"sv, "1533687297684537374" };
 
 	REX::TTomlSetting<bool>         bMarkerArtwork{ "Assets"sv, "bMarkerArtwork"sv, true };
@@ -292,6 +293,7 @@ namespace Config
 		snapshot->showQuest = bShowQuest.GetValue();
 		snapshot->showLocation = bShowLocation.GetValue();
 		snapshot->showExactLocation = bShowExactLocation.GetValue();
+		snapshot->showCombatTarget = bShowCombatTarget.GetValue();
 		snapshot->markerArtwork = bMarkerArtwork.GetValue();
 		snapshot->stateBadge = bStateBadge.GetValue();
 		snapshot->markerMaxDistance = iMarkerMaxDistance.GetValue();
@@ -345,6 +347,7 @@ namespace Config
 			WriteOverride(output, bShowQuest, "Privacy"sv, "bShowQuest"sv);
 			WriteOverride(output, bShowLocation, "Privacy"sv, "bShowLocation"sv);
 			WriteOverride(output, bShowExactLocation, "Privacy"sv, "bShowExactLocation"sv);
+			WriteOverride(output, bShowCombatTarget, "Privacy"sv, "bShowCombatTarget"sv);
 			WriteOverride(output, sApplicationID, "Discord"sv, "sApplicationID"sv);
 			WriteOverride(output, bMarkerArtwork, "Assets"sv, "bMarkerArtwork"sv);
 			WriteOverride(output, bStateBadge, "Assets"sv, "bStateBadge"sv);

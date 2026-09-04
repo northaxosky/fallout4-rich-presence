@@ -7,6 +7,20 @@
 #include <algorithm>
 #include <cmath>
 #include <string>
+#include <string_view>
+
+namespace
+{
+	[[nodiscard]] bool HasVisibleName(const char* a_name) noexcept
+	{
+		if (!a_name)
+		{
+			return false;
+		}
+
+		return std::string_view{ a_name }.find_first_not_of(" \t\n\r\f\v") != std::string_view::npos;
+	}
+}
 
 namespace Game
 {
@@ -39,6 +53,25 @@ namespace Game
 		}
 
 		state.inCombat = a_player->IsInCombat();
+		if (state.inCombat && a_player->currentCombatTarget)
+		{
+			const auto target = a_player->currentCombatTarget.get();
+			if (target)
+			{
+				state.combatTargetID = target->GetFormID();
+
+				const auto baseObject = target->GetObjectReference();
+				const auto actorBase = baseObject ? baseObject->As<RE::TESActorBase>() : nullptr;
+				if (actorBase)
+				{
+					const auto name = actorBase->GetFullName();
+					if (HasVisibleName(name))
+					{
+						state.combatTargetName = name;
+					}
+				}
+			}
+		}
 		state.inPowerArmor = RE::PowerArmor::PlayerInPowerArmor();
 		if (const auto actorValues = RE::ActorValue::GetSingleton();
 			actorValues && actorValues->rads && actorValues->health)

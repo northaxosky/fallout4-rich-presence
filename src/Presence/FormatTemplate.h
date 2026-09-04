@@ -19,7 +19,8 @@ namespace Presence
 		kObjective,
 		kLocation,
 		kWorldspace,
-		kState
+		kState,
+		kTarget
 	};
 
 	struct FormatValues
@@ -31,6 +32,7 @@ namespace Presence
 		std::string_view location;
 		std::string_view worldspace;
 		std::string_view state;
+		std::string_view target;
 	};
 
 	struct FormatTemplateError

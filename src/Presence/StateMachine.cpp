@@ -37,6 +37,7 @@ namespace Presence
 		loadingSamples_ = 0;
 		loadingExitSamples_ = 0;
 		combatActive_.Reset();
+		combatTarget_.Reset();
 		powerArmorActive_.Reset();
 		irradiatedActive_.Reset();
 		stateBadge_ = StateBadge::kNone;
@@ -52,6 +53,7 @@ namespace Presence
 		loadingSamples_ = 0;
 		loadingExitSamples_ = 0;
 		combatActive_.Reset();
+		combatTarget_.Reset();
 		powerArmorActive_.Reset();
 		irradiatedActive_.Reset();
 		stateBadge_ = StateBadge::kNone;
@@ -130,9 +132,19 @@ namespace Presence
 
 	void StateMachine::UpdateStateBadge(
 		const Game::Snapshot&   a_snapshot,
-		const Config::Snapshot& a_config) noexcept
+		const Config::Snapshot& a_config)
 	{
 		combatActive_.Update(a_snapshot.player.inCombat);
+		if (combatActive_.IsActive())
+		{
+			combatTarget_.Update(CombatTarget{
+				.id = a_snapshot.player.combatTargetID,
+				.name = a_snapshot.player.combatTargetName });
+		}
+		else
+		{
+			combatTarget_.Reset();
+		}
 		powerArmorActive_.Update(a_snapshot.player.inPowerArmor);
 		const auto irradiatedThreshold = static_cast<float>(a_config.irradiatedPercent) / 100.0F;
 		irradiatedActive_.Update(a_snapshot.player.radsFraction >= irradiatedThreshold);
@@ -174,7 +186,10 @@ namespace Presence
 			.objective = showQuest && a_snapshot.quest.hasQuest && a_snapshot.quest.hasObjective ? std::string_view{ a_snapshot.quest.objective } : std::string_view{},
 			.location = showExactLocation ? std::string_view{ a_snapshot.location.location } : std::string_view{},
 			.worldspace = showLocation ? std::string_view{ a_snapshot.location.worldspace } : std::string_view{},
-			.state = state
+			.state = state,
+			.target = a_config.showCombatTarget && combatActive_.IsActive() ?
+			              GetCombatTargetName() :
+			              std::string_view{}
 		};
 
 		activity.details = a_config.details.Render(values);
@@ -190,6 +205,11 @@ namespace Presence
 			case StateBadge::kCombat:
 				activity.smallImage = a_config.GetAssetKey(Asset::kCombat);
 				activity.smallText = a_config.combatSmallText.Render(values);
+				// an all-token template renders empty without a target name, leaving the badge untitled
+				if (activity.smallText.empty())
+				{
+					activity.smallText = StateBadgeLabel(StateBadge::kCombat);
+				}
 				break;
 			case StateBadge::kPowerArmor:
 				activity.smallImage = a_config.GetAssetKey(Asset::kPowerArmor);

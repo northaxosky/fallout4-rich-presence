@@ -28,7 +28,7 @@ namespace Host
 		inline constexpr auto kClientID = "dearmodding.richpresence";
 		inline constexpr auto kClientDisplayName = "Rich Presence";
 		inline constexpr auto kClientIcon = "gauge";
-		inline constexpr auto kFormatTokens = "Available tokens: {name} {level} {quest} {objective} {location} {worldspace} {state}.";
+		inline constexpr auto kFormatTokens = "Available tokens: {name} {level} {quest} {objective} {location} {worldspace} {state} {target}.";
 		inline constexpr auto kAssetDescription = "Use 1-32 lowercase ASCII letters, digits, or underscores, or leave empty for no image.";
 
 		enum class SettingSlot : std::size_t
@@ -40,6 +40,7 @@ namespace Host
 			kShowQuest,
 			kShowLocation,
 			kShowExactLocation,
+			kShowCombatTarget,
 			kApplicationID,
 			kMarkerArtwork,
 			kStateBadge,
@@ -92,6 +93,7 @@ namespace Host
 			CaptureValue(SettingSlot::kShowQuest, Config::bShowQuest);
 			CaptureValue(SettingSlot::kShowLocation, Config::bShowLocation);
 			CaptureValue(SettingSlot::kShowExactLocation, Config::bShowExactLocation);
+			CaptureValue(SettingSlot::kShowCombatTarget, Config::bShowCombatTarget);
 			CaptureValue(SettingSlot::kApplicationID, Config::sApplicationID);
 			CaptureValue(SettingSlot::kMarkerArtwork, Config::bMarkerArtwork);
 			CaptureValue(SettingSlot::kStateBadge, Config::bStateBadge);
@@ -308,6 +310,7 @@ namespace Host
 			RestoreDefault(Config::bShowQuest);
 			RestoreDefault(Config::bShowLocation);
 			RestoreDefault(Config::bShowExactLocation);
+			RestoreDefault(Config::bShowCombatTarget);
 			RestoreDefault(Config::sApplicationID);
 			RestoreDefault(Config::bMarkerArtwork);
 			RestoreDefault(Config::bStateBadge);
@@ -402,6 +405,13 @@ namespace Host
 				return Config::bShowLocation.GetValue();
 			};
 			group.settings.push_back(std::move(exactLocation));
+			group.settings.push_back(MakeSetting(
+				SettingSlot::kShowCombatTarget,
+				"bShowCombatTarget",
+				"Show combat target",
+				"Makes {target} available to templates while in combat.",
+				Config::bShowCombatTarget,
+				checkbox));
 			return group;
 		}
 

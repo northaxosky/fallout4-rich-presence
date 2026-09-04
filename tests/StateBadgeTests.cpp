@@ -4,6 +4,7 @@
 
 #include <array>
 #include <iostream>
+#include <string>
 #include <string_view>
 
 namespace
@@ -38,6 +39,33 @@ namespace
 		}
 		return true;
 	}
+
+	struct Target
+	{
+		std::uint32_t id{ 0 };
+		std::string   name;
+
+		[[nodiscard]] bool operator==(const Target& a_rhs) const noexcept
+		{
+			return id == a_rhs.id;
+		}
+	};
+
+	[[nodiscard]] bool CheckTarget(
+		std::string_view                        a_test,
+		const Presence::DebouncedValue<Target>& a_target,
+		std::uint32_t                           a_expectedID,
+		std::string_view                        a_expectedName)
+	{
+		const auto& actual = a_target.Get();
+		if (actual.id != a_expectedID || actual.name != a_expectedName)
+		{
+			std::cerr << "FAIL " << a_test << ": expected " << a_expectedID << " \"" << a_expectedName
+					  << "\", got " << actual.id << " \"" << actual.name << "\"\n";
+			return false;
+		}
+		return true;
+	}
 }
 
 int main()
@@ -67,6 +95,26 @@ int main()
 	flag.Update(true);
 	flag.Reset();
 	passed &= CheckFlag("reset", flag, false);
+
+	Presence::DebouncedValue<Target> target;
+	target.Update(Target{ .id = 1, .name = "Raider" });
+	passed &= CheckTarget("new target before threshold", target, 0, "");
+	target.Update(Target{ .id = 1, .name = "Raider" });
+	passed &= CheckTarget("new target at threshold", target, 1, "Raider");
+	target.Update(Target{ .id = 2, .name = "Deathclaw" });
+	passed &= CheckTarget("previous target while settling", target, 1, "Raider");
+	target.Update(Target{ .id = 3, .name = "Mirelurk" });
+	target.Update(Target{ .id = 2, .name = "Deathclaw" });
+	passed &= CheckTarget("interrupted run restarts", target, 1, "Raider");
+	target.Update(Target{ .id = 2, .name = "Deathclaw" });
+	passed &= CheckTarget("restarted run publishes", target, 2, "Deathclaw");
+	target.Update(Target{ .id = 3, .name = "Deathclaw" });
+	passed &= CheckTarget("same name different ID settles", target, 2, "Deathclaw");
+	target.Update(Target{ .id = 3, .name = "Deathclaw" });
+	passed &= CheckTarget("same name different ID publishes", target, 3, "Deathclaw");
+	target.Update(Target{ .id = 4, .name = "Gunner" });
+	target.Reset();
+	passed &= CheckTarget("value reset", target, 0, "");
 
 	const auto stateFormat = Presence::FormatTemplate::Compile("{state}");
 	if (!stateFormat)

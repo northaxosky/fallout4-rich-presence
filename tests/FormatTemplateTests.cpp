@@ -112,6 +112,9 @@ int main()
 	auto nameOnly = emptyValues;
 	nameOnly.name = "Sole Survivor";
 
+	auto targetOnly = emptyValues;
+	targetOnly.target = "Deathclaw";
+
 	auto questAndLocation = questOnly;
 	questAndLocation.location = "Diamond City";
 
@@ -138,6 +141,10 @@ int main()
 	passed &= Check("non-separator punctuation", "[]()\"'+*#!?.@&=%$ {name} {level}", levelOnly, "[]()\"'+*#!?.@&=%$ 12");
 	passed &= Check("empty name before label", "{name} - Level {level}", levelOnly, "Level 12");
 	passed &= Check("empty trailing objective", "{quest}: {objective}", questOnly, "Reunions");
+	passed &= Check("combat target", "Fighting {target}", targetOnly, "Fighting Deathclaw");
+	// consistent with "all tokens empty" below: the combat fallback lives in StateMachine, not here
+	passed &= Check("empty combat target", "Fighting {target}", emptyValues, "");
+	passed &= Check("empty target separator", "{quest} - {target}", questOnly, "Reunions");
 	passed &= Check("empty leading name", "{name} - {level}", levelOnly, "12");
 	passed &= Check("populated separators", "{quest}: {objective}", fullValues, "Reunions: Find Nick Valentine");
 	passed &= Check("all tokens empty label", "Quest: {quest}", emptyValues, "");
@@ -152,6 +159,7 @@ int main()
 	passed &= Check("ideographic whitespace", "　", emptyValues, "");
 	passed &= Check("UTF-8 words preserved", "世界{name}{level}", levelOnly, "世界12");
 	passed &= Rejects("unknown token", "{unknown}");
+	passed &= Compiles("target token", "{target}");
 	passed &= Rejects("unmatched opening brace", "{name");
 	passed &= Rejects("unmatched closing brace", "name}");
 	passed &= Compiles("source length limit", std::string(Presence::kFormatTemplateSourceLimit, 'x'));

@@ -1,7 +1,9 @@
 #pragma once
 
+#include <concepts>
 #include <cstdint>
 #include <string_view>
+#include <utility>
 
 namespace Presence
 {
@@ -49,6 +51,52 @@ namespace Presence
 	private:
 		bool         active_{ false };
 		std::uint8_t transitionSamples_{ 0 };
+	};
+
+	template <std::equality_comparable T>
+	class DebouncedValue
+	{
+	public:
+		void Update(T a_raw)
+		{
+			if (a_raw == published_)
+			{
+				pending_ = {};
+				pendingSamples_ = 0;
+				return;
+			}
+
+			if (pendingSamples_ == 0 || a_raw != pending_)
+			{
+				pending_ = std::move(a_raw);
+				pendingSamples_ = 1;
+			}
+			else if (pendingSamples_ < kStateBadgeSampleThreshold)
+			{
+				++pendingSamples_;
+			}
+
+			if (pendingSamples_ >= kStateBadgeSampleThreshold)
+			{
+				published_ = std::move(pending_);
+				pending_ = {};
+				pendingSamples_ = 0;
+			}
+		}
+
+		[[nodiscard]] const T& Get() const noexcept { return published_; }
+
+		void Reset() noexcept
+		{
+			published_ = {};
+			pending_ = {};
+			pendingSamples_ = 0;
+		}
+
+	private:
+		T            published_{};
+		T            pending_{};
+		std::uint8_t pendingSamples_{ 0 };
 	};
 
 	[[nodiscard]] constexpr StateBadge ResolveStateBadge(

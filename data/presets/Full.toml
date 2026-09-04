@@ -10,6 +10,7 @@ bShowPlayerName = true
 bShowQuest = true
 bShowLocation = true
 bShowExactLocation = true
+bShowCombatTarget = true
 
 [Discord]
 sApplicationID = "1533687297684537374"
@@ -32,4 +33,4 @@ sDetails = "{quest}"
 sState = "{location} - {worldspace}"
 sLargeText = "{objective}"
 sSmallText = "{name} - Level {level}"
-sCombatSmallText = "{state}"
+sCombatSmallText = "Fighting {target}"
