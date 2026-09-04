@@ -2,6 +2,10 @@
 
 #include "Game/PlayerState.h"
 
+#include <RE/P/PowerArmor.h>
+
+#include <algorithm>
+#include <cmath>
 #include <string>
 
 namespace Game
@@ -35,6 +39,22 @@ namespace Game
 		}
 
 		state.inCombat = a_player->IsInCombat();
+		state.inPowerArmor = RE::PowerArmor::PlayerInPowerArmor();
+		if (const auto actorValues = RE::ActorValue::GetSingleton();
+			actorValues && actorValues->rads && actorValues->health)
+		{
+			const auto rads = a_player->GetActorValue(*actorValues->rads);
+			const auto health = a_player->GetActorValue(*actorValues->health);
+			const auto totalHealth = health + rads;
+			if (totalHealth > 0.0F)
+			{
+				const auto fraction = rads / totalHealth;
+				if (std::isfinite(fraction))
+				{
+					state.radsFraction = std::clamp(fraction, 0.0F, 1.0F);
+				}
+			}
+		}
 		state.charGenFlag = a_player->byCharGenFlag;
 		state.inLooksMenu = a_player->inLooksMenu;
 

@@ -12,7 +12,9 @@ namespace Presence
 		kLoading,
 		kCharacterCreation,
 		kPlayer,
-		kCombat
+		kCombat,
+		kPowerArmor,
+		kIrradiated
 	};
 
 	inline constexpr std::string_view kDefaultAssetKey = "fallout4";
@@ -27,6 +29,10 @@ namespace Presence
 			case Asset::kPlayer:
 			case Asset::kCombat:
 				return "vaultboy";
+			case Asset::kPowerArmor:
+				return "state_powerarmor";
+			case Asset::kIrradiated:
+				return "state_irradiated";
 			default:
 				return kDefaultAssetKey;
 		}
@@ -61,4 +67,6 @@ namespace Presence
 	static_assert(IsValidAssetKey(DefaultAssetKey(Asset::kCharacterCreation)));
 	static_assert(IsValidAssetKey(DefaultAssetKey(Asset::kPlayer)));
 	static_assert(IsValidAssetKey(DefaultAssetKey(Asset::kCombat)));
+	static_assert(IsValidAssetKey(DefaultAssetKey(Asset::kPowerArmor)));
+	static_assert(IsValidAssetKey(DefaultAssetKey(Asset::kIrradiated)));
 }

@@ -25,8 +25,9 @@ xmake build
 ```
 
 The plugin builds to `build/windows/x64/release/Fallout4RichPresence.dll`.
-Run the unit tests with `xmake build FormatTemplateTests MarkerAssetTests`, followed by
-`xmake run FormatTemplateTests` and `xmake run MarkerAssetTests`.
+Run the unit tests with `xmake build FormatTemplateTests MarkerAssetTests StateBadgeTests`,
+followed by `xmake run FormatTemplateTests`, `xmake run MarkerAssetTests`, and
+`xmake run StateBadgeTests`.
 
 ## Packaging
 
@@ -62,6 +63,7 @@ exactly one configuration preset. For a manual installation, copy the DLL and on
 | Section | Key | Default | Purpose |
 | --- | --- | --- | --- |
 | General | `iSamplingIntervalMs` | `500` | Milliseconds between game-state samples. |
+| General | `iIrradiatedPercent` | `25` | Radiation percentage of the health pool at which the irradiated badge appears. |
 | General | `bDebugLogging` | `false` | Enables diagnostic logging. |
 | Privacy | `bShowPlayerName` | `false` | Makes `{name}` available to templates. |
 | Privacy | `bShowQuest` | `true` | Makes `{quest}` and `{objective}` available. |
@@ -69,6 +71,7 @@ exactly one configuration preset. For a manual installation, copy the DLL and on
 | Privacy | `bShowExactLocation` | `true` | Makes `{location}` available when location data is permitted. |
 | Discord | `sApplicationID` | `"1533687297684537374"` | Discord application ID. |
 | Assets | `bMarkerArtwork` | `true` | Uses nearby discovered map-marker artwork during gameplay. |
+| Assets | `bStateBadge` | `true` | Enables power-armor and irradiated state badges. |
 | Assets | `iMarkerMaxDistance` | `16384` | Maximum game-unit distance for marker artwork and interior location fallback. |
 | Assets | `sAssetDefault` | `"fallout4"` | Large image during normal gameplay. |
 | Assets | `sAssetMainMenu` | `"mainmenu"` | Large image at the main menu. |
@@ -76,6 +79,8 @@ exactly one configuration preset. For a manual installation, copy the DLL and on
 | Assets | `sAssetCharacterCreation` | `"fallout4"` | Large image during character creation. |
 | Assets | `sAssetPlayer` | `"vaultboy"` | Small image beside player information. |
 | Assets | `sAssetCombat` | `"vaultboy"` | Small image while in combat. |
+| Assets | `sAssetPowerArmor` | `"state_powerarmor"` | Small image while wearing power armor. |
+| Assets | `sAssetIrradiated` | `"state_irradiated"` | Small image at or above the irradiated threshold. |
 | Format | `sDetails` | `"{quest}"` | In-game details line. |
 | Format | `sState` | `"{location} - {worldspace}"` | In-game state line. |
 | Format | `sLargeText` | `"{objective}"` | In-game large-image tooltip. |
@@ -85,6 +90,10 @@ exactly one configuration preset. For a manual installation, copy the DLL and on
 An asset key may be empty to show no image for that slot. A small image identical to the large
 image is suppressed, so a single uploaded asset renders one icon rather than a duplicated badge;
 upload distinct art and the badge appears with no configuration change.
+
+State badges use the first active state in this order: combat, power armor, then irradiated.
+Each state must be observed for two consecutive samples before it changes. Disabling
+`bStateBadge` restores the original combat-or-player badge behavior.
 
 During gameplay, marker artwork uses the nearest discovered Pip-Boy map marker within
 `iMarkerMaxDistance`. It is disabled when either `bMarkerArtwork` or `bShowLocation` is false,
@@ -127,8 +136,9 @@ higher-priority mod.
 ### Format templates
 
 The in-game format keys accept `{name}`, `{level}`, `{quest}`, `{objective}`, `{location}`,
-`{worldspace}`, and `{state}`. `{state}` resolves to `In Game` or `In Combat`. Main-menu,
-loading, and character-creation labels remain fixed.
+`{worldspace}`, and `{state}`. `{state}` resolves to `In Game`, `In Combat`, `In Power Armor`,
+or `Irradiated` according to the active badge. Main-menu, loading, and character-creation labels
+remain fixed.
 
 Hidden or unavailable values resolve to empty. An empty token joins the separator runs on either
 side into one boundary, then whitespace is collapsed without splitting UTF-8 code points. If
@@ -155,9 +165,13 @@ Restore the 500 ms sampling interval and disable debug logging after testing.
 
 ## Discord asset checklist
 
-Upload one Rich Presence image under the key `fallout4`; every asset slot uses it by default.
-Custom artwork can use a different configured key for each slot. Keys must contain 1-32 lowercase
-ASCII letters, digits, or underscores. Invalid configured keys fall back to `fallout4`.
+Upload Rich Presence images under the shipped keys `fallout4`, `mainmenu`, `vaultboy`,
+`state_powerarmor`, and `state_irradiated`. Custom artwork can use a different configured key for
+each slot. Keys must contain 1-32 lowercase ASCII letters, digits, or underscores. Invalid
+configured keys fall back to that slot's compiled-in key.
+
+A configured or mapped key that has not been uploaded renders blank because Discord does not
+expose the application's asset inventory to the plugin.
 
 For all curated map-marker artwork, upload images under these keys:
 

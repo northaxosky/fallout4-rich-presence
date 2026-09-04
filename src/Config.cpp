@@ -22,6 +22,11 @@ namespace Config
 		"iSamplingIntervalMs"sv,
 		static_cast<std::int32_t>(kDefaultSamplingInterval.count())
 	};
+	REX::TTomlSetting<std::int32_t> iIrradiatedPercent{
+		"General"sv,
+		"iIrradiatedPercent"sv,
+		kDefaultIrradiatedPercent
+	};
 	REX::TTomlSetting<bool> bDebugLogging{ "General"sv, "bDebugLogging"sv, false };
 
 	// name is personal, quest and location are spoilers; the shipped preset opts into the latter two
@@ -32,6 +37,7 @@ namespace Config
 	REX::TTomlSetting<std::string> sApplicationID{ "Discord"sv, "sApplicationID"sv, "1533687297684537374" };
 
 	REX::TTomlSetting<bool>         bMarkerArtwork{ "Assets"sv, "bMarkerArtwork"sv, true };
+	REX::TTomlSetting<bool>         bStateBadge{ "Assets"sv, "bStateBadge"sv, true };
 	REX::TTomlSetting<std::int32_t> iMarkerMaxDistance{
 		"Assets"sv,
 		"iMarkerMaxDistance"sv,
@@ -43,6 +49,8 @@ namespace Config
 	REX::TTomlSetting<std::string> sAssetCharacterCreation{ "Assets"sv, "sAssetCharacterCreation"sv, std::string{ Presence::DefaultAssetKey(Presence::Asset::kCharacterCreation) } };
 	REX::TTomlSetting<std::string> sAssetPlayer{ "Assets"sv, "sAssetPlayer"sv, std::string{ Presence::DefaultAssetKey(Presence::Asset::kPlayer) } };
 	REX::TTomlSetting<std::string> sAssetCombat{ "Assets"sv, "sAssetCombat"sv, std::string{ Presence::DefaultAssetKey(Presence::Asset::kCombat) } };
+	REX::TTomlSetting<std::string> sAssetPowerArmor{ "Assets"sv, "sAssetPowerArmor"sv, std::string{ Presence::DefaultAssetKey(Presence::Asset::kPowerArmor) } };
+	REX::TTomlSetting<std::string> sAssetIrradiated{ "Assets"sv, "sAssetIrradiated"sv, std::string{ Presence::DefaultAssetKey(Presence::Asset::kIrradiated) } };
 
 	REX::TTomlSetting<std::string> sDetails{ "Format"sv, "sDetails"sv, std::string{ Config::kDefaultDetailsTemplate } };
 	REX::TTomlSetting<std::string> sState{ "Format"sv, "sState"sv, std::string{ Config::kDefaultStateTemplate } };
@@ -72,6 +80,10 @@ namespace
 				return 4;
 			case Presence::Asset::kCombat:
 				return 5;
+			case Presence::Asset::kPowerArmor:
+				return 6;
+			case Presence::Asset::kIrradiated:
+				return 7;
 		}
 
 		return 0;
@@ -239,6 +251,22 @@ namespace Config
 			iSamplingIntervalMs.SetValue(static_cast<std::int32_t>(kDefaultSamplingInterval.count()));
 		}
 
+		const auto irradiatedPercent = std::clamp(
+			iIrradiatedPercent.GetValue(),
+			kMinimumIrradiatedPercent,
+			kMaximumIrradiatedPercent);
+		if (irradiatedPercent != iIrradiatedPercent.GetValue())
+		{
+			if (a_validation == Validation::kStrict)
+			{
+				REX::WARN("iIrradiatedPercent must be between {} and {}; using {}",
+					kMinimumIrradiatedPercent,
+					kMaximumIrradiatedPercent,
+					irradiatedPercent);
+			}
+			iIrradiatedPercent.SetValue(irradiatedPercent);
+		}
+
 		const auto markerMaxDistance = std::clamp(
 			iMarkerMaxDistance.GetValue(),
 			kMinimumMarkerMaxDistance,
@@ -258,12 +286,14 @@ namespace Config
 		const auto previous = Current();
 		auto       snapshot = std::make_shared<Snapshot>();
 		snapshot->samplingInterval = std::chrono::milliseconds{ iSamplingIntervalMs.GetValue() };
+		snapshot->irradiatedPercent = iIrradiatedPercent.GetValue();
 		snapshot->debugLogging = bDebugLogging.GetValue();
 		snapshot->showPlayerName = bShowPlayerName.GetValue();
 		snapshot->showQuest = bShowQuest.GetValue();
 		snapshot->showLocation = bShowLocation.GetValue();
 		snapshot->showExactLocation = bShowExactLocation.GetValue();
 		snapshot->markerArtwork = bMarkerArtwork.GetValue();
+		snapshot->stateBadge = bStateBadge.GetValue();
 		snapshot->markerMaxDistance = iMarkerMaxDistance.GetValue();
 		snapshot->assetKeys[AssetIndex(Presence::Asset::kFallout4)] = ResolveAssetKey(sAssetDefault, Presence::Asset::kFallout4, "sAssetDefault"sv, previous->GetAssetKey(Presence::Asset::kFallout4), a_validation);
 		snapshot->assetKeys[AssetIndex(Presence::Asset::kMainMenu)] = ResolveAssetKey(sAssetMainMenu, Presence::Asset::kMainMenu, "sAssetMainMenu"sv, previous->GetAssetKey(Presence::Asset::kMainMenu), a_validation);
@@ -271,6 +301,8 @@ namespace Config
 		snapshot->assetKeys[AssetIndex(Presence::Asset::kCharacterCreation)] = ResolveAssetKey(sAssetCharacterCreation, Presence::Asset::kCharacterCreation, "sAssetCharacterCreation"sv, previous->GetAssetKey(Presence::Asset::kCharacterCreation), a_validation);
 		snapshot->assetKeys[AssetIndex(Presence::Asset::kPlayer)] = ResolveAssetKey(sAssetPlayer, Presence::Asset::kPlayer, "sAssetPlayer"sv, previous->GetAssetKey(Presence::Asset::kPlayer), a_validation);
 		snapshot->assetKeys[AssetIndex(Presence::Asset::kCombat)] = ResolveAssetKey(sAssetCombat, Presence::Asset::kCombat, "sAssetCombat"sv, previous->GetAssetKey(Presence::Asset::kCombat), a_validation);
+		snapshot->assetKeys[AssetIndex(Presence::Asset::kPowerArmor)] = ResolveAssetKey(sAssetPowerArmor, Presence::Asset::kPowerArmor, "sAssetPowerArmor"sv, previous->GetAssetKey(Presence::Asset::kPowerArmor), a_validation);
+		snapshot->assetKeys[AssetIndex(Presence::Asset::kIrradiated)] = ResolveAssetKey(sAssetIrradiated, Presence::Asset::kIrradiated, "sAssetIrradiated"sv, previous->GetAssetKey(Presence::Asset::kIrradiated), a_validation);
 		snapshot->details = ResolveTemplate(sDetails, kDefaultDetailsTemplate, "sDetails"sv, previous->details, a_validation);
 		snapshot->state = ResolveTemplate(sState, kDefaultStateTemplate, "sState"sv, previous->state, a_validation);
 		snapshot->largeText = ResolveTemplate(sLargeText, kDefaultLargeTextTemplate, "sLargeText"sv, previous->largeText, a_validation);
@@ -307,6 +339,7 @@ namespace Config
 			}
 
 			WriteOverride(output, iSamplingIntervalMs, "General"sv, "iSamplingIntervalMs"sv);
+			WriteOverride(output, iIrradiatedPercent, "General"sv, "iIrradiatedPercent"sv);
 			WriteOverride(output, bDebugLogging, "General"sv, "bDebugLogging"sv);
 			WriteOverride(output, bShowPlayerName, "Privacy"sv, "bShowPlayerName"sv);
 			WriteOverride(output, bShowQuest, "Privacy"sv, "bShowQuest"sv);
@@ -314,6 +347,7 @@ namespace Config
 			WriteOverride(output, bShowExactLocation, "Privacy"sv, "bShowExactLocation"sv);
 			WriteOverride(output, sApplicationID, "Discord"sv, "sApplicationID"sv);
 			WriteOverride(output, bMarkerArtwork, "Assets"sv, "bMarkerArtwork"sv);
+			WriteOverride(output, bStateBadge, "Assets"sv, "bStateBadge"sv);
 			WriteOverride(output, iMarkerMaxDistance, "Assets"sv, "iMarkerMaxDistance"sv);
 			WriteOverride(output, sAssetDefault, "Assets"sv, "sAssetDefault"sv);
 			WriteOverride(output, sAssetMainMenu, "Assets"sv, "sAssetMainMenu"sv);
@@ -321,6 +355,8 @@ namespace Config
 			WriteOverride(output, sAssetCharacterCreation, "Assets"sv, "sAssetCharacterCreation"sv);
 			WriteOverride(output, sAssetPlayer, "Assets"sv, "sAssetPlayer"sv);
 			WriteOverride(output, sAssetCombat, "Assets"sv, "sAssetCombat"sv);
+			WriteOverride(output, sAssetPowerArmor, "Assets"sv, "sAssetPowerArmor"sv);
+			WriteOverride(output, sAssetIrradiated, "Assets"sv, "sAssetIrradiated"sv);
 			WriteOverride(output, sDetails, "Format"sv, "sDetails"sv);
 			WriteOverride(output, sState, "Format"sv, "sState"sv);
 			WriteOverride(output, sLargeText, "Format"sv, "sLargeText"sv);

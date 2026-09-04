@@ -15,7 +15,9 @@ namespace Game
 		std::string  name;
 		std::int16_t level{ 0 };
 		std::int8_t  charGenFlag{ 0 };
+		float        radsFraction{ 0.0F };
 		bool         inCombat{ false };
+		bool         inPowerArmor{ false };
 		bool         inMainMenu{ false };
 		bool         inLoadingMenu{ false };
 		bool         inLooksMenu{ false };

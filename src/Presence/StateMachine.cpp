@@ -36,8 +36,10 @@ namespace Presence
 		loadingObserved_ = false;
 		loadingSamples_ = 0;
 		loadingExitSamples_ = 0;
-		combatActive_ = false;
-		combatTransitionSamples_ = 0;
+		combatActive_.Reset();
+		powerArmorActive_.Reset();
+		irradiatedActive_.Reset();
+		stateBadge_ = StateBadge::kNone;
 		holdActivity_ = false;
 		nameTrustedAt_.reset();
 	}
@@ -49,8 +51,10 @@ namespace Presence
 		loadingObserved_ = false;
 		loadingSamples_ = 0;
 		loadingExitSamples_ = 0;
-		combatActive_ = false;
-		combatTransitionSamples_ = 0;
+		combatActive_.Reset();
+		powerArmorActive_.Reset();
+		irradiatedActive_.Reset();
+		stateBadge_ = StateBadge::kNone;
 		holdActivity_ = false;
 		nameTrustedAt_.reset();
 	}
@@ -124,24 +128,18 @@ namespace Presence
 		return GameState::kUnknown;
 	}
 
-	void StateMachine::UpdateCombat(bool a_inCombat) noexcept
+	void StateMachine::UpdateStateBadge(
+		const Game::Snapshot&   a_snapshot,
+		const Config::Snapshot& a_config) noexcept
 	{
-		if (a_inCombat == combatActive_)
-		{
-			combatTransitionSamples_ = 0;
-			return;
-		}
-
-		if (combatTransitionSamples_ < kCombatSampleThreshold)
-		{
-			++combatTransitionSamples_;
-		}
-
-		if (combatTransitionSamples_ >= kCombatSampleThreshold)
-		{
-			combatActive_ = a_inCombat;
-			combatTransitionSamples_ = 0;
-		}
+		combatActive_.Update(a_snapshot.player.inCombat);
+		powerArmorActive_.Update(a_snapshot.player.inPowerArmor);
+		const auto irradiatedThreshold = static_cast<float>(a_config.irradiatedPercent) / 100.0F;
+		irradiatedActive_.Update(a_snapshot.player.radsFraction >= irradiatedThreshold);
+		stateBadge_ = ResolveStateBadge(
+			combatActive_.IsActive(),
+			a_config.stateBadge && powerArmorActive_.IsActive(),
+			a_config.stateBadge && irradiatedActive_.IsActive());
 	}
 
 	Activity StateMachine::BuildInGame(
@@ -167,7 +165,7 @@ namespace Presence
 		const auto showLocation = a_config.showLocation;
 		const auto showExactLocation = showLocation && a_config.showExactLocation;
 		const auto level = a_snapshot.player.level > 0 ? std::to_string(a_snapshot.player.level) : std::string{};
-		const auto state = combatActive_ ? "In Combat"sv : "In Game"sv;
+		const auto state = StateBadgeLabel(stateBadge_);
 
 		const FormatValues values{
 			.name = showName ? std::string_view{ a_snapshot.player.name } : std::string_view{},
@@ -187,17 +185,28 @@ namespace Presence
 			activity.state = level.empty() ? "In Game" : "Level " + level;
 		}
 
-		if (combatActive_)
+		switch (stateBadge_)
 		{
-			activity.smallImage = a_config.GetAssetKey(Asset::kCombat);
-			activity.smallText = a_config.combatSmallText.Render(values);
-		}
-		else
-		{
-			activity.smallText = a_config.smallText.Render(values);
-			if (!activity.smallText.empty())
+			case StateBadge::kCombat:
+				activity.smallImage = a_config.GetAssetKey(Asset::kCombat);
+				activity.smallText = a_config.combatSmallText.Render(values);
+				break;
+			case StateBadge::kPowerArmor:
+				activity.smallImage = a_config.GetAssetKey(Asset::kPowerArmor);
+				activity.smallText = a_config.smallText.Render(values);
+				break;
+			case StateBadge::kIrradiated:
+				activity.smallImage = a_config.GetAssetKey(Asset::kIrradiated);
+				activity.smallText = a_config.smallText.Render(values);
+				break;
+			case StateBadge::kNone:
 			{
-				activity.smallImage = a_config.GetAssetKey(Asset::kPlayer);
+				activity.smallText = a_config.smallText.Render(values);
+				if (!activity.smallText.empty())
+				{
+					activity.smallImage = a_config.GetAssetKey(Asset::kPlayer);
+				}
+				break;
 			}
 		}
 
@@ -246,7 +255,7 @@ namespace Presence
 
 		if (state_ == GameState::kInGame)
 		{
-			UpdateCombat(a_snapshot.player.inCombat);
+			UpdateStateBadge(a_snapshot, a_config);
 		}
 
 		ActivityUpdate activity;

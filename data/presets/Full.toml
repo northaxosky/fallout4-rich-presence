@@ -2,6 +2,7 @@
 
 [General]
 iSamplingIntervalMs = 500
+iIrradiatedPercent = 25
 bDebugLogging = false
 
 [Privacy]
@@ -15,6 +16,7 @@ sApplicationID = "1533687297684537374"
 
 [Assets]
 bMarkerArtwork = true
+bStateBadge = true
 iMarkerMaxDistance = 16384
 sAssetDefault = "fallout4"
 sAssetMainMenu = "mainmenu"
@@ -22,6 +24,8 @@ sAssetLoading = "fallout4"
 sAssetCharacterCreation = "fallout4"
 sAssetPlayer = "vaultboy"
 sAssetCombat = "vaultboy"
+sAssetPowerArmor = "state_powerarmor"
+sAssetIrradiated = "state_irradiated"
 
 [Format]
 sDetails = "{quest}"

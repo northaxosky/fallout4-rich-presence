@@ -19,6 +19,9 @@ namespace Presence
 namespace Config
 {
 	inline constexpr auto             kDefaultSamplingInterval = std::chrono::milliseconds{ 500 };
+	inline constexpr std::int32_t     kDefaultIrradiatedPercent = 25;
+	inline constexpr std::int32_t     kMinimumIrradiatedPercent = 1;
+	inline constexpr std::int32_t     kMaximumIrradiatedPercent = 100;
 	inline constexpr std::int32_t     kDefaultMarkerMaxDistance = 16384;
 	inline constexpr std::int32_t     kMinimumMarkerMaxDistance = 1;
 	inline constexpr std::int32_t     kMaximumMarkerMaxDistance = 131072;
@@ -29,6 +32,7 @@ namespace Config
 	inline constexpr std::string_view kDefaultCombatSmallTextTemplate = "{state}";
 
 	extern REX::TTomlSetting<std::int32_t> iSamplingIntervalMs;
+	extern REX::TTomlSetting<std::int32_t> iIrradiatedPercent;
 	extern REX::TTomlSetting<bool>         bDebugLogging;
 	extern REX::TTomlSetting<bool>         bShowPlayerName;
 	extern REX::TTomlSetting<bool>         bShowQuest;
@@ -36,6 +40,7 @@ namespace Config
 	extern REX::TTomlSetting<bool>         bShowExactLocation;
 	extern REX::TTomlSetting<std::string>  sApplicationID;
 	extern REX::TTomlSetting<bool>         bMarkerArtwork;
+	extern REX::TTomlSetting<bool>         bStateBadge;
 	extern REX::TTomlSetting<std::int32_t> iMarkerMaxDistance;
 	extern REX::TTomlSetting<std::string>  sAssetDefault;
 	extern REX::TTomlSetting<std::string>  sAssetMainMenu;
@@ -43,6 +48,8 @@ namespace Config
 	extern REX::TTomlSetting<std::string>  sAssetCharacterCreation;
 	extern REX::TTomlSetting<std::string>  sAssetPlayer;
 	extern REX::TTomlSetting<std::string>  sAssetCombat;
+	extern REX::TTomlSetting<std::string>  sAssetPowerArmor;
+	extern REX::TTomlSetting<std::string>  sAssetIrradiated;
 	extern REX::TTomlSetting<std::string>  sDetails;
 	extern REX::TTomlSetting<std::string>  sState;
 	extern REX::TTomlSetting<std::string>  sLargeText;
@@ -52,14 +59,16 @@ namespace Config
 	struct Snapshot
 	{
 		std::chrono::milliseconds  samplingInterval{ kDefaultSamplingInterval };
+		std::int32_t               irradiatedPercent{ kDefaultIrradiatedPercent };
 		bool                       debugLogging{ false };
 		bool                       showPlayerName{ false };
 		bool                       showQuest{ true };
 		bool                       showLocation{ true };
 		bool                       showExactLocation{ true };
 		bool                       markerArtwork{ true };
+		bool                       stateBadge{ true };
 		std::int32_t               markerMaxDistance{ kDefaultMarkerMaxDistance };
-		std::array<std::string, 6> assetKeys{};
+		std::array<std::string, 8> assetKeys{};
 		Presence::FormatTemplate   details{};
 		Presence::FormatTemplate   state{};
 		Presence::FormatTemplate   largeText{};

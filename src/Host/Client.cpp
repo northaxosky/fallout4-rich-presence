@@ -34,6 +34,7 @@ namespace Host
 		enum class SettingSlot : std::size_t
 		{
 			kSamplingInterval,
+			kIrradiatedPercent,
 			kDebugLogging,
 			kShowPlayerName,
 			kShowQuest,
@@ -41,6 +42,7 @@ namespace Host
 			kShowExactLocation,
 			kApplicationID,
 			kMarkerArtwork,
+			kStateBadge,
 			kMarkerMaxDistance,
 			kAssetDefault,
 			kAssetMainMenu,
@@ -48,6 +50,8 @@ namespace Host
 			kAssetCharacterCreation,
 			kAssetPlayer,
 			kAssetCombat,
+			kAssetPowerArmor,
+			kAssetIrradiated,
 			kDetails,
 			kState,
 			kLargeText,
@@ -81,6 +85,8 @@ namespace Host
 		{
 			g_savedValues[SlotIndex(SettingSlot::kSamplingInterval)] =
 				static_cast<std::int64_t>(Config::iSamplingIntervalMs.GetValue());
+			g_savedValues[SlotIndex(SettingSlot::kIrradiatedPercent)] =
+				static_cast<std::int64_t>(Config::iIrradiatedPercent.GetValue());
 			CaptureValue(SettingSlot::kDebugLogging, Config::bDebugLogging);
 			CaptureValue(SettingSlot::kShowPlayerName, Config::bShowPlayerName);
 			CaptureValue(SettingSlot::kShowQuest, Config::bShowQuest);
@@ -88,6 +94,7 @@ namespace Host
 			CaptureValue(SettingSlot::kShowExactLocation, Config::bShowExactLocation);
 			CaptureValue(SettingSlot::kApplicationID, Config::sApplicationID);
 			CaptureValue(SettingSlot::kMarkerArtwork, Config::bMarkerArtwork);
+			CaptureValue(SettingSlot::kStateBadge, Config::bStateBadge);
 			g_savedValues[SlotIndex(SettingSlot::kMarkerMaxDistance)] =
 				static_cast<std::int64_t>(Config::iMarkerMaxDistance.GetValue());
 			CaptureValue(SettingSlot::kAssetDefault, Config::sAssetDefault);
@@ -96,6 +103,8 @@ namespace Host
 			CaptureValue(SettingSlot::kAssetCharacterCreation, Config::sAssetCharacterCreation);
 			CaptureValue(SettingSlot::kAssetPlayer, Config::sAssetPlayer);
 			CaptureValue(SettingSlot::kAssetCombat, Config::sAssetCombat);
+			CaptureValue(SettingSlot::kAssetPowerArmor, Config::sAssetPowerArmor);
+			CaptureValue(SettingSlot::kAssetIrradiated, Config::sAssetIrradiated);
 			CaptureValue(SettingSlot::kDetails, Config::sDetails);
 			CaptureValue(SettingSlot::kState, Config::sState);
 			CaptureValue(SettingSlot::kLargeText, Config::sLargeText);
@@ -172,6 +181,43 @@ namespace Host
 			descriptor.isDirty = [setting] {
 				return dmui::SettingValue{ static_cast<std::int64_t>(setting->GetValue()) } !=
 				       g_savedValues[SlotIndex(SettingSlot::kSamplingInterval)];
+			};
+			descriptor.isModified = [setting] {
+				return setting->GetValue() != setting->GetValueDefault();
+			};
+			return descriptor;
+		}
+
+		[[nodiscard]] dmui::SettingDescriptor MakeIrradiatedPercent()
+		{
+			auto* const             setting = &Config::iIrradiatedPercent;
+			dmui::SettingDescriptor descriptor;
+			descriptor.id = "iIrradiatedPercent";
+			descriptor.label = "Irradiated threshold";
+			descriptor.description = "Radiation percentage of the health pool at which the irradiated badge appears.";
+			descriptor.control = dmui::SignedSettingControl{
+				.range = dmui::NumericSettingRange<std::int64_t>{
+					.minimum = Config::kMinimumIrradiatedPercent,
+					.maximum = Config::kMaximumIrradiatedPercent },
+				.format = "%lld%%",
+				.dragSpeed = 1.0f
+			};
+			descriptor.defaultValue = static_cast<std::int64_t>(setting->GetValueDefault());
+			descriptor.binding = dmui::BindSetting(
+				[setting] { return static_cast<std::int64_t>(setting->GetValue()); },
+				[setting](std::int64_t a_value) {
+					const auto value = std::clamp(
+						a_value,
+						static_cast<std::int64_t>(std::numeric_limits<std::int32_t>::min()),
+						static_cast<std::int64_t>(std::numeric_limits<std::int32_t>::max()));
+					setting->SetValue(static_cast<std::int32_t>(value));
+					Config::Rebuild(Config::Validation::kQuiet);
+					return static_cast<std::int64_t>(setting->GetValue());
+				});
+			descriptor.applyTiming = dmui::SettingApplyTiming::kImmediate;
+			descriptor.isDirty = [setting] {
+				return dmui::SettingValue{ static_cast<std::int64_t>(setting->GetValue()) } !=
+				       g_savedValues[SlotIndex(SettingSlot::kIrradiatedPercent)];
 			};
 			descriptor.isModified = [setting] {
 				return setting->GetValue() != setting->GetValueDefault();
@@ -256,6 +302,7 @@ namespace Host
 		void ResetSettings()
 		{
 			RestoreDefault(Config::iSamplingIntervalMs);
+			RestoreDefault(Config::iIrradiatedPercent);
 			RestoreDefault(Config::bDebugLogging);
 			RestoreDefault(Config::bShowPlayerName);
 			RestoreDefault(Config::bShowQuest);
@@ -263,6 +310,7 @@ namespace Host
 			RestoreDefault(Config::bShowExactLocation);
 			RestoreDefault(Config::sApplicationID);
 			RestoreDefault(Config::bMarkerArtwork);
+			RestoreDefault(Config::bStateBadge);
 			RestoreDefault(Config::iMarkerMaxDistance);
 			RestoreDefault(Config::sAssetDefault);
 			RestoreDefault(Config::sAssetMainMenu);
@@ -270,6 +318,8 @@ namespace Host
 			RestoreDefault(Config::sAssetCharacterCreation);
 			RestoreDefault(Config::sAssetPlayer);
 			RestoreDefault(Config::sAssetCombat);
+			RestoreDefault(Config::sAssetPowerArmor);
+			RestoreDefault(Config::sAssetIrradiated);
 			RestoreDefault(Config::sDetails);
 			RestoreDefault(Config::sState);
 			RestoreDefault(Config::sLargeText);
@@ -301,6 +351,7 @@ namespace Host
 			group.id = "general";
 			group.label = "General";
 			group.settings.push_back(MakeSamplingInterval());
+			group.settings.push_back(MakeIrradiatedPercent());
 			group.settings.push_back(MakeSetting(
 				SettingSlot::kDebugLogging,
 				"bDebugLogging",
@@ -417,6 +468,14 @@ namespace Host
 				Config::bMarkerArtwork,
 				checkbox,
 				dmui::SettingApplyTiming::kImmediate));
+			group.settings.push_back(MakeSetting(
+				SettingSlot::kStateBadge,
+				"bStateBadge",
+				"State badges",
+				"Shows debounced power-armor and irradiated status badges during gameplay.",
+				Config::bStateBadge,
+				checkbox,
+				dmui::SettingApplyTiming::kImmediate));
 			group.settings.push_back(MakeMarkerMaxDistance());
 			group.settings.push_back(MakeSetting(
 				SettingSlot::kAssetDefault,
@@ -460,6 +519,22 @@ namespace Host
 				kAssetDescription,
 				Config::sAssetCombat,
 				text));
+			group.settings.push_back(MakeSetting(
+				SettingSlot::kAssetPowerArmor,
+				"sAssetPowerArmor",
+				"Power armor image",
+				kAssetDescription,
+				Config::sAssetPowerArmor,
+				text,
+				dmui::SettingApplyTiming::kImmediate));
+			group.settings.push_back(MakeSetting(
+				SettingSlot::kAssetIrradiated,
+				"sAssetIrradiated",
+				"Irradiated image",
+				kAssetDescription,
+				Config::sAssetIrradiated,
+				text,
+				dmui::SettingApplyTiming::kImmediate));
 			return group;
 		}
 

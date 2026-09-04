@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Presence/Activity.h"
+#include "Presence/StateBadge.h"
 
 #include <chrono>
 #include <cstdint>
@@ -53,7 +54,7 @@ namespace Presence
 		using Clock = std::chrono::steady_clock;
 
 		inline static constexpr auto         kMinimumCharacterCreationSettleDelay = std::chrono::milliseconds{ 200 };
-		inline static constexpr std::uint8_t kCombatSampleThreshold = 2;
+		inline static constexpr std::uint8_t kCombatSampleThreshold = kStateBadgeSampleThreshold;
 		inline static constexpr std::uint8_t kLoadingSampleThreshold = 2;
 
 		void                         BeginSession() noexcept;
@@ -61,14 +62,15 @@ namespace Presence
 		[[nodiscard]] GameState      GetState() const noexcept { return state_; }
 		[[nodiscard]] bool           IsPlayerNameTrusted() const noexcept { return state_ != GameState::kCharacterCreation && !nameTrustedAt_; }
 		[[nodiscard]] bool           IsSessionActive() const noexcept { return sessionActive_; }
-		[[nodiscard]] bool           IsCombatActive() const noexcept { return combatActive_; }
+		[[nodiscard]] bool           IsCombatActive() const noexcept { return combatActive_.IsActive(); }
+		[[nodiscard]] StateBadge     GetStateBadge() const noexcept { return stateBadge_; }
 		[[nodiscard]] bool           IsHoldingActivity() const noexcept { return holdActivity_; }
 
 	private:
 		[[nodiscard]] GameState DetectState(const Game::Snapshot& a_snapshot);
 		[[nodiscard]] Activity  BuildInGame(const Game::Snapshot& a_snapshot, const Config::Snapshot& a_config, std::int64_t a_startTimestamp, bool a_nameTrusted) const;
 		void                    EndSession() noexcept;
-		void                    UpdateCombat(bool a_inCombat) noexcept;
+		void                    UpdateStateBadge(const Game::Snapshot& a_snapshot, const Config::Snapshot& a_config) noexcept;
 
 		GameState                        state_{ GameState::kUnknown };
 		std::optional<Clock::time_point> nameTrustedAt_;
@@ -77,8 +79,10 @@ namespace Presence
 		bool                             loadingObserved_{ false };
 		std::uint8_t                     loadingSamples_{ 0 };
 		std::uint8_t                     loadingExitSamples_{ 0 };
-		bool                             combatActive_{ false };
-		std::uint8_t                     combatTransitionSamples_{ 0 };
+		DebouncedFlag                    combatActive_;
+		DebouncedFlag                    powerArmorActive_;
+		DebouncedFlag                    irradiatedActive_;
+		StateBadge                       stateBadge_{ StateBadge::kNone };
 		bool                             holdActivity_{ false };
 		ActivityUpdate                   lastActivity_;
 	};
