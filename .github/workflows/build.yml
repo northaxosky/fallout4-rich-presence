@@ -32,6 +32,9 @@ jobs:
           xmake build -y FormatTemplateTests
           xmake run FormatTemplateTests
 
+      - name: test host integration
+        run: xmake build -y HostPageTests && xmake run HostPageTests
+
       - name: get short sha
         run: echo "SHORT_SHA=$("${{ github.sha }}".SubString(0, 8))" >> $env:GITHUB_ENV
 

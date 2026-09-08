@@ -1,6 +1,6 @@
 #include "Host/Client.h"
+#include "Host/Navigation.h"
 
-#include <DearModdingUI/Client.h>
 #include <DearModdingUI/IconGlyphs.h>
 
 #include "Config.h"
@@ -31,46 +31,31 @@ namespace Host
 	{
 		inline constexpr auto kClientID = "dearmodding.richpresence";
 		inline constexpr auto kClientDisplayName = "Rich Presence";
-		inline constexpr auto kClientIcon = "gauge";
-		inline constexpr auto kCategory = "Overview";
 		inline constexpr auto kFormatTokens = "Available tokens: {name} {level} {quest} {objective} {location} {worldspace} {state} {target} {activity}.";
 		inline constexpr auto kAssetDescription = "Use 1-32 lowercase ASCII letters, digits, or underscores, or leave empty for no image.";
 
-		struct QuickLink
-		{
-			const char* label;
-			const char* url;
-			const char* tooltip;
+		const std::array kQuickLinks{
+			dmui::Link{
+				.label = "GitHub",
+				.external = {
+					.targetKind = DMUI_EXTERNAL_TARGET_URI,
+					.target = "https://github.com/northaxosky/fallout4-rich-presence" },
+				.note = "Open the Fallout 4 Rich Presence project in your browser.",
+				.glyph = DearModdingUI::FindPhosphorSlugGlyphOrZero("github-logo"),
+				.action = dmui::LinkAction::kOpenExternal }
 		};
 
-		constexpr std::array<QuickLink, 2> kQuickLinks{
-			QuickLink{
-				"Copy GitHub URL",
-				"https://github.com/northaxosky/fallout4-rich-presence",
-				"Copy the Fallout 4 Rich Presence GitHub URL to the clipboard." },
-			QuickLink{
-				"Copy Discord app URL",
-				"https://discord.com/developers/applications",
-				"Copy the Discord Developer Applications URL to the clipboard." }
-		};
-
-		struct FaqEntry
-		{
-			const char* question;
-			const char* answer;
-		};
-
-		constexpr std::array<FaqEntry, 4> kFaqEntries{
-			FaqEntry{
+		constexpr std::array kFaqEntries{
+			dmui::FaqEntry{
 				"Why is one of my images blank?",
 				"The image key has not been uploaded to the Discord application, or the key was typed incorrectly. Keys are 1-32 lowercase letters, digits, and underscores." },
-			FaqEntry{
+			dmui::FaqEntry{
 				"How do I hide my location or quest?",
 				"Use the Privacy group on the Settings page, or install the Spoiler-free preset." },
-			FaqEntry{
+			dmui::FaqEntry{
 				"Which Fallout 4 runtimes are supported?",
 				"One DLL supports 1.10.163, 1.10.984, 1.11.221, and 1.11.240." },
-			FaqEntry{
+			dmui::FaqEntry{
 				"Where are my settings stored?",
 				"Data/F4SE/Plugins/Fallout4RichPresence.toml is the installed preset. Put personal overrides in Fallout4RichPresenceCustom.toml beside it so they survive reinstalling." }
 		};
@@ -129,11 +114,15 @@ namespace Host
 			kClientDisplayName,
 			dmui::Version{ PLUGIN_VERSION_MAJOR, PLUGIN_VERSION_MINOR },
 			dmui::kForwardingClient,
-			kClientIcon
+			kClientIcon,
+			{},
+			kClientOptions
 		};
 		std::array<dmui::SettingValue, static_cast<std::size_t>(SettingSlot::kCount)> g_savedValues{};
 		Discord::Status                                                               g_status{};
 		std::vector<Game::Conflict>                                                   g_conflicts;
+		DMUI_Result                                                                   g_linkRowResult{ DMUI_RESULT_OK };
+		DMUI_Result                                                                   g_faqResult{ DMUI_RESULT_OK };
 
 		[[nodiscard]] constexpr std::size_t SlotIndex(SettingSlot a_slot) noexcept
 		{
@@ -514,9 +503,7 @@ namespace Host
 		{
 			(void)g_client.DrawSectionHeader(
 				"Live presence",
-				DearModdingUI::FindIconGlyphOrZero(
-					DearModdingUI::kClientIconGlyphs,
-					"monitor"));
+				DearModdingUI::FindPhosphorSlugGlyphOrZero("monitor"));
 
 			const auto labelWidth = ImGui::CalcTextSize("Small image text").x;
 			if (ImGui::BeginTable(
@@ -577,9 +564,7 @@ namespace Host
 		{
 			(void)g_client.DrawSectionHeader(
 				"Connection",
-				DearModdingUI::FindIconGlyphOrZero(
-					DearModdingUI::kClientIconGlyphs,
-					"gauge"));
+				DearModdingUI::FindPhosphorSlugGlyphOrZero("gauge"));
 
 			if (!a_colors)
 			{
@@ -671,63 +656,49 @@ namespace Host
 			ImGui::Spacing();
 		}
 
-		void DrawQuickLinks() noexcept
+		void ReportHomeWidgetResult(bool a_success, DMUI_Result& a_previous, const char* a_message)
+		{
+			if (a_success)
+			{
+				a_previous = DMUI_RESULT_OK;
+				return;
+			}
+
+			const auto result = g_client.LastResult();
+			ImGui::TextDisabled("%s", a_message);
+			if (result != a_previous)
+			{
+				a_previous = result;
+				REX::WARN("{}: {}", a_message, DMUI_ResultToString(result));
+				// A failed link click must not latch a permanent connection-health error in the host.
+				if (!g_client.SetStatus(DMUI_STATUS_SEVERITY_INFO, a_message))
+				{
+					REX::WARN("DearModdingUI status reporting failed: {}", DMUI_ResultToString(g_client.LastResult()));
+				}
+			}
+		}
+
+		void DrawQuickLinks()
 		{
 			(void)g_client.DrawSectionHeader(
 				"Quick Links",
-				DearModdingUI::ResolveActionIconGlyph("clipboard"));
-
-			DMUI_StyleMetrics style{};
-			if (ImGui::GetStyleMetrics(style) != DMUI_RESULT_OK)
-			{
-				return;
-			}
-			const auto spacing = style.itemSpacing.x;
-			const auto buttonWidth =
-				(ImGui::GetContentRegionAvail().x -
-					spacing * static_cast<float>(kQuickLinks.size() - 1)) /
-				static_cast<float>(kQuickLinks.size());
-
-			for (std::size_t index = 0; index < kQuickLinks.size(); ++index)
-			{
-				const auto& link = kQuickLinks[index];
-				if (ImGui::Button(link.label, { buttonWidth, 0.0F }))
-				{
-					ImGui::SetClipboardText(link.url);
-				}
-				if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
-				{
-					(void)ImGui::BeginTooltip();
-					ImGui::TextUnformatted(link.tooltip);
-					ImGui::EndTooltip();
-				}
-				if (index + 1 < kQuickLinks.size())
-				{
-					ImGui::SameLine();
-				}
-			}
+				DearModdingUI::FindPhosphorSlugGlyphOrZero("link"));
+			ReportHomeWidgetResult(
+				g_client.DrawLinkRow("rich-presence-links", kQuickLinks),
+				g_linkRowResult,
+				"Project links failed. See Fallout4RichPresence.log for details.");
 			ImGui::Spacing();
 		}
 
-		void DrawFaq() noexcept
+		void DrawFaq()
 		{
 			(void)g_client.DrawSectionHeader(
 				"FAQ",
-				DearModdingUI::FindIconGlyphOrZero(
-					DearModdingUI::kClientIconGlyphs,
-					"puzzlepiece"));
-			for (const auto& entry : kFaqEntries)
-			{
-				if (!ImGui::CollapsingHeader(entry.question))
-				{
-					continue;
-				}
-				const dmui::FontGuard font{ g_client, DMUI_FONT_ROLE_SUBTEXT };
-				ImGui::Indent();
-				ImGui::TextWrapped("%s", entry.answer);
-				ImGui::Unindent();
-				ImGui::Spacing();
-			}
+				DearModdingUI::FindPhosphorSlugGlyphOrZero("question"));
+			ReportHomeWidgetResult(
+				g_client.DrawFaq("rich-presence-faq", kFaqEntries),
+				g_faqResult,
+				"FAQ unavailable. See Fallout4RichPresence.log for details.");
 		}
 
 		void DrawHome()
@@ -1284,26 +1255,22 @@ namespace Host
 				else
 				{
 					REX::ERROR(
-						"DearModdingUI registration failed: {}",
+						"DearModdingUI registration failed: {}; a matching host and client API build is required",
 						DMUI_ResultToString(g_client.LastResult()));
 				}
 				return;
 			}
 
-			if (!ImGui::IsForwardVersionCompatible())
+			if (!g_client.AddCategory(kGeneralCategory))
 			{
-				REX::WARN("The DearModdingUI host uses an incompatible ImGui forwarding API");
+				REX::ERROR(
+					"DearModdingUI category registration failed: {}",
+					DMUI_ResultToString(g_client.LastResult()));
 				return;
 			}
 
 			CaptureSavedValues();
-			const auto homePage = g_client.AddPage(
-				"home",
-				"Home",
-				kCategory,
-				&DrawHome,
-				"Connection state and what your Discord profile is showing.",
-				0);
+			const auto homePage = g_client.AddPage(kHomePage, &DrawHome);
 			if (!homePage)
 			{
 				REX::ERROR(
@@ -1312,13 +1279,7 @@ namespace Host
 				return;
 			}
 
-			const auto settingsPage = g_client.AddSettingsPage(
-				"settings",
-				"Settings",
-				kCategory,
-				MakeSettingsPage(),
-				"Configure Discord Rich Presence and inspect its connection.",
-				10);
+			const auto settingsPage = g_client.AddSettingsPage(kSettingsPage, MakeSettingsPage());
 			if (!settingsPage)
 			{
 				REX::ERROR(
