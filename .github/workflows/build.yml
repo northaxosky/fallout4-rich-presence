@@ -3,13 +3,23 @@ name: build
 on:
   push:
     branches: [ main ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: pwsh
+
 jobs:
   xmake:
     runs-on: windows-latest
+    outputs:
+      version: ${{ steps.package.outputs.version }}
     steps:
       - name: checkout
         uses: actions/checkout@v7
@@ -37,16 +47,56 @@ jobs:
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
 
-      - name: get short sha
-        run: echo "SHORT_SHA=$("${{ github.sha }}".SubString(0, 8))" >> $env:GITHUB_ENV
-
       - name: bundle
+        id: package
         run: |
           xmake package
-          Rename-Item -Path "dist" -NewName "Fallout4RichPresence-${{ env.SHORT_SHA }}"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          [xml]$info = Get-Content -LiteralPath dist\fomod\info.xml
+          $version = $info.fomod.Version
+          if ($version -notmatch '^\d+\.\d+\.\d+$') { throw "Invalid package version: $version" }
+          if ($env:GITHUB_REF.StartsWith('refs/tags/') -and $env:GITHUB_REF_NAME -ne "v$version") {
+            throw "Tag $env:GITHUB_REF_NAME does not match package version $version"
+          }
+          $dll = Get-Item -LiteralPath dist\F4SE\Plugins\Fallout4RichPresence.dll
+          if ($dll.VersionInfo.FileVersion -ne "$version.0") { throw 'DLL/package version mismatch' }
+          $expected = @(
+            'F4SE\Plugins\Fallout4RichPresence.dll', 'F4SE\Plugins\Fallout4RichPresence.pdb',
+            'F4SE\Plugins\Fallout4RichPresence.toml', 'fomod\info.xml', 'fomod\ModuleConfig.xml',
+            'presets\Default.toml', 'presets\Full.toml', 'presets\Minimal.toml', 'presets\SpoilerFree.toml'
+          )
+          $root = (Resolve-Path dist).Path
+          $actual = @(Get-ChildItem dist -Recurse -File | ForEach-Object { $_.FullName.Substring($root.Length + 1) })
+          if (Compare-Object $expected $actual) { throw 'Unexpected or missing package files' }
+          Compress-Archive -Path dist\* -DestinationPath "Fallout4RichPresence-$version.zip" -CompressionLevel Optimal
+          "version=$version" >> $env:GITHUB_OUTPUT
 
       - name: upload artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: Fallout4RichPresence-${{ env.SHORT_SHA }}
-          path: "Fallout4RichPresence-${{ env.SHORT_SHA }}"
+          name: Fallout4RichPresence-${{ steps.package.outputs.version }}
+          path: Fallout4RichPresence-${{ steps.package.outputs.version }}.zip
+          compression-level: 0
+          if-no-files-found: error
+
+  release:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: xmake
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - name: download tested package
+        uses: actions/download-artifact@v7
+        with:
+          name: Fallout4RichPresence-${{ needs.xmake.outputs.version }}
+
+      - name: publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          VERSION: ${{ needs.xmake.outputs.version }}
+        run: |
+          gh release create "$env:RELEASE_TAG" "Fallout4RichPresence-$env:VERSION.zip" --verify-tag --title "Fallout 4 Rich Presence $env:VERSION" --generate-notes
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
