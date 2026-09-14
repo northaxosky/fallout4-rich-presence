@@ -9,9 +9,10 @@ Discord Rich Presence for Fallout 4, as an F4SE plugin.
 - [xmake](https://xmake.io/) 3.0 or newer
 - Visual Studio 2022 with the Desktop development with C++ workload
 
-[DearModdingUI](https://github.com/Dear-Modding-FO4/DearModdingUI) is an optional soft
-dependency that provides in-game status and settings pages. Rich Presence works normally when it is
-not installed.
+[DearModdingUI](https://github.com/Dear-Modding-FO4/DearModdingUI) is an optional soft dependency
+that provides in-game status and settings pages. The host must include field-feedback support from
+host commit `d034b47` / API commit `c8dc8fb`; the published 0.1.2 host predates that addition.
+Rich Presence works normally when DearModdingUI is absent or older.
 
 Supported runtimes: 1.10.163, 1.10.984, 1.11.221, 1.11.240.
 
@@ -20,13 +21,13 @@ Supported runtimes: 1.10.163, 1.10.984, 1.11.221, 1.11.240.
 ```
 git clone --recurse-submodules https://github.com/northaxosky/fallout4-rich-presence
 cd fallout4-rich-presence
-xmake config --mode=release
+xmake config --mode=releasedbg
 xmake build
 ```
 
-The plugin builds to `build/windows/x64/release/Fallout4RichPresence.dll`.
+The plugin builds to `build/windows/x64/releasedbg/Fallout4RichPresence.dll`, with its matching PDB.
 Run the unit tests with
-`xmake build FormatTemplateTests MarkerAssetTests StateBadgeTests MenuActivityTests`,
+`xmake build FormatTemplateTests MarkerAssetTests StateBadgeTests MenuActivityTests HostPageTests ConfigFeedbackTests`,
 followed by `xmake run` for each target.
 
 ## Packaging
@@ -152,15 +153,19 @@ conflicts, and a host-rendered GitHub link and FAQ. The GitHub link opens the br
 preview can precede Discord updates while the transport is disconnected or rate-limited.
 **Settings** edits the same options in game, with Status at the top. Sampling, privacy, format,
 asset, and logging changes apply immediately; changing `sApplicationID` requires restarting
-Fallout 4 because the Discord worker
-captures it at startup.
+Fallout 4 because the Discord worker captures it at startup. Inline feedback identifies malformed
+templates, invalid asset keys or application IDs, and out-of-range numeric values. Invalid drafts remain editable while the
+last valid value stays active; **Apply** rejects them without rewriting the draft or custom file.
+A valid application ID that differs from the startup value shows a restart notice even after it
+is saved, and the notice clears only when the startup value is restored or the game restarts.
 
-This integration uses the pre-release DearModdingUI 0.1 API with explicit categories and external
-links (`DearModdingUI-API` revision `7cf9789`). Earlier development snapshots are not compatible.
-The client checks forwarding compatibility and required host services before registration. If the
-host is absent or incompatible, Discord presence and TOML configuration continue without the UI.
+This integration uses DearModdingUI's stable `dmui::ui` contract with explicit categories,
+host-owned icon resolution, external links, and host-rendered field feedback
+(`DearModdingUI-API` revision `c8dc8fb`). The client negotiates the required stable UI prefix,
+host services, and the appended field-feedback operations before registering pages. If the host
+is absent or incompatible, Discord presence and TOML configuration continue without the UI.
 
-Run the navigation and host-service preflight tests with `xmake build HostPageTests` followed by
+Run the navigation and field-feedback compatibility tests with `xmake build HostPageTests` followed by
 `xmake run HostPageTests`. They do not require a running game or a loaded UI host.
 
 Use **Apply** to persist edits. The page writes only values that differ from the installed preset
@@ -197,8 +202,10 @@ side into one boundary, then whitespace is collapsed without splitting UTF-8 cod
 every token is empty, the field is empty; templates without tokens remain constant text after
 whitespace normalization. For example,
 `{quest} - {objective} - {location}` becomes `Reunions - Diamond City` when the objective is
-missing. Sources over 512 bytes, unknown tokens, and unbalanced braces fall back to that key's
-compiled-in default.
+missing. Sources over 512 bytes, unknown tokens, and unbalanced braces fall back to that key's installed
+preset (or compiled-in default if the preset is also invalid) during startup loading. In-game
+editing instead preserves the invalid draft, reports it inline, and keeps publishing the last
+valid compiled template until corrected.
 
 The combat tooltip is the one field with a fallback: when `sCombatSmallText` renders empty,
 because no target name is available, the badge is labelled `In Combat` rather than left untitled.
@@ -233,8 +240,9 @@ Restore the 500 ms sampling interval and disable debug logging after testing.
 
 Upload Rich Presence images under the shipped keys `fallout4`, `mainmenu`, `vaultboy`,
 `state_powerarmor`, and `state_irradiated`. Custom artwork can use a different configured key for
-each slot. Keys must contain 1-32 lowercase ASCII letters, digits, or underscores. Invalid
-configured keys fall back to that slot's compiled-in key.
+each slot. Keys must contain up to 32 lowercase ASCII letters, digits, or underscores; empty means
+no image. Invalid keys use the installed-preset or compiled-in fallback during startup. In-game
+editing preserves an invalid draft and the last valid active key until it is corrected.
 
 A configured or mapped key that has not been uploaded renders blank because Discord does not
 expose the application's asset inventory to the plugin.

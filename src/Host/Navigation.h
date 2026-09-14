@@ -6,15 +6,28 @@ namespace Host
 {
 	inline constexpr auto kClientIcon = "discord-logo";
 
+	[[nodiscard]] constexpr bool HasFieldFeedbackAPI(const DMUI_HostAPI* a_api) noexcept
+	{
+		return a_api &&
+		       a_api->structSize >= DMUI_HOST_API_BEGIN_FIELD_SIZE &&
+		       a_api->beginField &&
+		       a_api->structSize >= DMUI_HOST_API_SET_FIELD_FEEDBACK_SIZE &&
+		       a_api->setFieldFeedback &&
+		       a_api->structSize >= DMUI_HOST_API_END_FIELD_SIZE &&
+		       a_api->endField;
+	}
+
 	inline constexpr dmui::ClientOptions kClientOptions{
 		.requiredServices = DMUI_HOST_SERVICE_EXTERNAL_OPEN,
-		.minimumForwardingVersion = DMUI_FORWARDING_VERSION_CURRENT
+		.minimumUIRevision = DMUI_UI_REVISION_1,
+		.minimumUIAPISize = DMUI_UI_API_REQUIRED_SIZE
 	};
 
 	inline constexpr dmui::CategoryDescriptor kGeneralCategory{
 		.id = "general",
 		.displayName = "General",
-		.sortKey = 0
+		.sortKey = 0,
+		.iconName = "gear"
 	};
 
 	inline constexpr dmui::PageDescriptor kHomePage{

@@ -3,7 +3,7 @@ includes("lib/commonlibf4")
 
 -- name and version
 local plugin_name = "Fallout4RichPresence"
-local plugin_version = "1.0.0"
+local plugin_version = "1.1.0"
 local plugin_version_major, plugin_version_minor, plugin_version_patch = plugin_version:match("^(%d+)%.(%d+)%.(%d+)$")
 
 -- mod manager folder for xmake install, joined onto FO4_DEV_MODS
@@ -155,4 +155,13 @@ target("HostPageTests", function()
     add_deps("commonlibf4")
     add_files("tests/HostPageTests.cpp")
     add_includedirs("src")
+end)
+
+target("ConfigFeedbackTests", function()
+    set_kind("binary")
+    set_default(false)
+    add_deps("commonlibf4")
+    add_files("tests/ConfigFeedbackTests.cpp", "src/Config.cpp", "src/Presence/FormatTemplate.cpp")
+    add_includedirs("src")
+    set_pcxxheader("src/pch.h")
 end)

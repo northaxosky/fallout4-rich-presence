@@ -29,11 +29,13 @@ jobs:
 
       - name: test
         run: |
-          xmake build -y FormatTemplateTests
-          xmake run FormatTemplateTests
-
-      - name: test host integration
-        run: xmake build -y HostPageTests && xmake run HostPageTests
+          $targets = @('FormatTemplateTests', 'MarkerAssetTests', 'StateBadgeTests', 'MenuActivityTests', 'HostPageTests', 'ConfigFeedbackTests')
+          xmake build -y @targets
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          foreach ($target in $targets) {
+            xmake run $target
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
 
       - name: get short sha
         run: echo "SHORT_SHA=$("${{ github.sha }}".SubString(0, 8))" >> $env:GITHUB_ENV

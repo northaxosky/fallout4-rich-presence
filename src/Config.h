@@ -49,6 +49,27 @@ namespace Config
 	inline constexpr std::string_view kDefaultLabelSitWait = "Waiting";
 	inline constexpr std::string_view kDefaultLabelDialogue = "Talking";
 
+	enum class FeedbackSeverity : std::uint8_t
+	{
+		kInfo,
+		kWarning,
+		kError
+	};
+
+	struct SettingFeedback
+	{
+		FeedbackSeverity severity{ FeedbackSeverity::kInfo };
+		std::string      message;
+		bool             blocksSave{};
+	};
+
+	enum class SaveResult : std::uint8_t
+	{
+		kSuccess,
+		kInvalidDraft,
+		kIOError
+	};
+
 	extern REX::TTomlSetting<std::int32_t> iSamplingIntervalMs;
 	extern REX::TTomlSetting<std::int32_t> iIrradiatedPercent;
 	extern REX::TTomlSetting<bool>         bDebugLogging;
@@ -148,5 +169,9 @@ namespace Config
 
 	[[nodiscard]] std::shared_ptr<const Snapshot> Current() noexcept;
 	[[nodiscard]] std::string                     GetApplicationID();
-	[[nodiscard]] bool                            SaveOverrides();
+	[[nodiscard]] bool                            IsPlausibleApplicationID(std::string_view a_value) noexcept;
+	// Read only on the config-writer thread; pointers expire at the next rebuild.
+	[[nodiscard]] const SettingFeedback* GetFeedback(const REX::ISetting& a_setting) noexcept;
+	[[nodiscard]] bool                   HasBlockingFeedback() noexcept;
+	[[nodiscard]] SaveResult             SaveOverrides();
 }

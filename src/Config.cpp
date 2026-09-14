@@ -7,10 +7,12 @@
 #include <array>
 #include <atomic>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <memory>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <utility>
 
 #include <toml.hpp>
@@ -113,6 +115,8 @@ namespace
 	std::atomic<std::shared_ptr<const Config::Snapshot>> g_current{
 		std::make_shared<const Config::Snapshot>()
 	};
+	std::unordered_map<const REX::ISetting*, Config::SettingFeedback> g_feedback;
+	std::string                                                       g_startupApplicationID{ Config::sApplicationID.GetValue() };
 
 	[[nodiscard]] std::string ResolveAssetKey(
 		REX::TTomlSetting<std::string>& a_setting,
@@ -129,6 +133,11 @@ namespace
 
 		if (a_validation == Config::Validation::kQuiet)
 		{
+			g_feedback[&a_setting] = {
+				Config::FeedbackSeverity::kError,
+				"Use up to 32 lowercase ASCII letters, digits, or underscores, or leave empty for no image.",
+				true
+			};
 			return std::string{ a_previous };
 		}
 
@@ -161,6 +170,11 @@ namespace
 		// every prefix of "{quest}" is invalid, so a keystroke must not discard the last good template
 		if (a_validation == Config::Validation::kQuiet)
 		{
+			g_feedback[&a_setting] = {
+				Config::FeedbackSeverity::kError,
+				std::format("Invalid template at byte {}: {}.", result.error().position, result.error().message),
+				true
+			};
 			return a_previous;
 		}
 
@@ -182,6 +196,25 @@ namespace
 
 		REX::ERROR("Compiled-in default {}.{} is invalid; field disabled", a_section, a_name);
 		return {};
+	}
+
+	[[nodiscard]] std::int32_t ResolveNumber(
+		REX::TTomlSetting<std::int32_t>& a_setting,
+		std::int32_t                     a_corrected,
+		std::int32_t                     a_previous,
+		Config::Validation               a_validation,
+		std::string_view                 a_message)
+	{
+		if (a_setting.GetValue() == a_corrected)
+			return a_corrected;
+		if (a_validation == Config::Validation::kQuiet)
+		{
+			g_feedback[&a_setting] = { Config::FeedbackSeverity::kWarning, std::string{ a_message }, true };
+			return a_previous;
+		}
+		REX::WARN("{} Using {}.", a_message, a_corrected);
+		a_setting.SetValue(a_corrected);
+		return a_corrected;
 	}
 
 	void RemoveSetting(toml::value& a_output, std::string_view a_section, std::string_view a_key)
@@ -259,56 +292,52 @@ namespace Config
 			"Data/F4SE/Plugins/Fallout4RichPresence.toml",
 			kCustomPath.data());
 		store->Load();
+		g_startupApplicationID = sApplicationID.GetValue();
 		Rebuild();
 	}
 
 	void Rebuild(Validation a_validation)
 	{
-		if (iSamplingIntervalMs.GetValue() <= 0)
-		{
-			if (a_validation == Validation::kStrict)
-			{
-				REX::WARN("iSamplingIntervalMs must be positive; using {}", kDefaultSamplingInterval.count());
-			}
-			iSamplingIntervalMs.SetValue(static_cast<std::int32_t>(kDefaultSamplingInterval.count()));
-		}
-
-		const auto irradiatedPercent = std::clamp(
-			iIrradiatedPercent.GetValue(),
-			kMinimumIrradiatedPercent,
-			kMaximumIrradiatedPercent);
-		if (irradiatedPercent != iIrradiatedPercent.GetValue())
-		{
-			if (a_validation == Validation::kStrict)
-			{
-				REX::WARN("iIrradiatedPercent must be between {} and {}; using {}",
-					kMinimumIrradiatedPercent,
-					kMaximumIrradiatedPercent,
-					irradiatedPercent);
-			}
-			iIrradiatedPercent.SetValue(irradiatedPercent);
-		}
-
-		const auto markerMaxDistance = std::clamp(
-			iMarkerMaxDistance.GetValue(),
-			kMinimumMarkerMaxDistance,
-			kMaximumMarkerMaxDistance);
-		if (markerMaxDistance != iMarkerMaxDistance.GetValue())
-		{
-			if (a_validation == Validation::kStrict)
-			{
-				REX::WARN("iMarkerMaxDistance must be between {} and {}; using {}",
-					kMinimumMarkerMaxDistance,
-					kMaximumMarkerMaxDistance,
-					markerMaxDistance);
-			}
-			iMarkerMaxDistance.SetValue(markerMaxDistance);
-		}
+		g_feedback.clear();
 
 		const auto previous = Current();
 		auto       snapshot = std::make_shared<Snapshot>();
-		snapshot->samplingInterval = std::chrono::milliseconds{ iSamplingIntervalMs.GetValue() };
-		snapshot->irradiatedPercent = iIrradiatedPercent.GetValue();
+
+		const auto samplingInterval = iSamplingIntervalMs.GetValue();
+		snapshot->samplingInterval = std::chrono::milliseconds{ ResolveNumber(
+			iSamplingIntervalMs,
+			samplingInterval > 0 ? samplingInterval : static_cast<std::int32_t>(kDefaultSamplingInterval.count()),
+			static_cast<std::int32_t>(previous->samplingInterval.count()), a_validation,
+			"Sampling interval must be a positive 32-bit integer.") };
+
+		const auto irradiatedDraft = iIrradiatedPercent.GetValue();
+		const auto irradiatedPercent = std::clamp(
+			irradiatedDraft,
+			kMinimumIrradiatedPercent,
+			kMaximumIrradiatedPercent);
+		snapshot->irradiatedPercent = ResolveNumber(
+			iIrradiatedPercent, irradiatedPercent, previous->irradiatedPercent, a_validation,
+			std::format("Irradiated threshold must be between {} and {}.", kMinimumIrradiatedPercent, kMaximumIrradiatedPercent));
+
+		const auto markerMaxDistanceDraft = iMarkerMaxDistance.GetValue();
+		const auto markerMaxDistance = std::clamp(
+			markerMaxDistanceDraft,
+			kMinimumMarkerMaxDistance,
+			kMaximumMarkerMaxDistance);
+		snapshot->markerMaxDistance = ResolveNumber(
+			iMarkerMaxDistance, markerMaxDistance, previous->markerMaxDistance, a_validation,
+			std::format("Marker maximum distance must be between {} and {}.", kMinimumMarkerMaxDistance, kMaximumMarkerMaxDistance));
+
+		const auto applicationID = sApplicationID.GetValue();
+		if (!IsPlausibleApplicationID(applicationID))
+		{
+			g_feedback[&sApplicationID] = { FeedbackSeverity::kError, "Application ID must contain 17-20 decimal digits.", true };
+		}
+		else if (applicationID != g_startupApplicationID)
+		{
+			g_feedback[&sApplicationID] = { FeedbackSeverity::kInfo, "Restart Fallout 4 to use this application ID.", false };
+		}
+
 		snapshot->debugLogging = bDebugLogging.GetValue();
 		snapshot->showPlayerName = bShowPlayerName.GetValue();
 		snapshot->showQuest = bShowQuest.GetValue();
@@ -318,7 +347,6 @@ namespace Config
 		snapshot->showMenuActivity = bShowMenuActivity.GetValue();
 		snapshot->markerArtwork = bMarkerArtwork.GetValue();
 		snapshot->stateBadge = bStateBadge.GetValue();
-		snapshot->markerMaxDistance = iMarkerMaxDistance.GetValue();
 		snapshot->assetKeys[AssetIndex(Presence::Asset::kFallout4)] = ResolveAssetKey(sAssetDefault, Presence::Asset::kFallout4, "sAssetDefault"sv, previous->GetAssetKey(Presence::Asset::kFallout4), a_validation);
 		snapshot->assetKeys[AssetIndex(Presence::Asset::kMainMenu)] = ResolveAssetKey(sAssetMainMenu, Presence::Asset::kMainMenu, "sAssetMainMenu"sv, previous->GetAssetKey(Presence::Asset::kMainMenu), a_validation);
 		snapshot->assetKeys[AssetIndex(Presence::Asset::kLoading)] = ResolveAssetKey(sAssetLoading, Presence::Asset::kLoading, "sAssetLoading"sv, previous->GetAssetKey(Presence::Asset::kLoading), a_validation);
@@ -363,10 +391,39 @@ namespace Config
 		return sApplicationID.GetValue();
 	}
 
-	bool SaveOverrides()
+	bool IsPlausibleApplicationID(std::string_view a_value) noexcept
+	{
+		return a_value.size() >= 17 &&
+		       a_value.size() <= 20 &&
+		       std::ranges::all_of(a_value, [](char a_character) {
+				   return a_character >= '0' && a_character <= '9';
+			   });
+	}
+
+	const SettingFeedback* GetFeedback(const REX::ISetting& a_setting) noexcept
+	{
+		const auto found = g_feedback.find(&a_setting);
+		return found == g_feedback.end() ? nullptr : &found->second;
+	}
+
+	bool HasBlockingFeedback() noexcept
+	{
+		return std::ranges::any_of(g_feedback, [](const auto& a_feedback) {
+			return a_feedback.second.blocksSave;
+		});
+	}
+
+	SaveResult SaveOverrides()
 	{
 		try
 		{
+			Rebuild(Validation::kQuiet);
+			if (HasBlockingFeedback())
+			{
+				LogSaveError("fix invalid settings before saving"sv);
+				return SaveResult::kInvalidDraft;
+			}
+
 			// toml11 default-constructs to an empty (non-table) value whose as_table() throws
 			toml::value output{ toml::table{} };
 			if (std::filesystem::exists(kCustomPath))
@@ -375,7 +432,7 @@ namespace Config
 				if (!result.is_ok())
 				{
 					LogSaveError("the existing file is not valid TOML"sv);
-					return false;
+					return SaveResult::kIOError;
 				}
 				output = result.unwrap();
 			}
@@ -431,7 +488,7 @@ namespace Config
 			if (!file)
 			{
 				LogSaveError("the file could not be opened for writing"sv);
-				return false;
+				return SaveResult::kIOError;
 			}
 
 			file << kCustomHeader;
@@ -444,9 +501,9 @@ namespace Config
 			if (!file)
 			{
 				LogSaveError("the write did not complete"sv);
-				return false;
+				return SaveResult::kIOError;
 			}
-			return true;
+			return SaveResult::kSuccess;
 		}
 		catch (const std::exception& a_exception)
 		{
@@ -456,6 +513,6 @@ namespace Config
 		{
 			LogSaveError("unknown failure"sv);
 		}
-		return false;
+		return SaveResult::kIOError;
 	}
 }

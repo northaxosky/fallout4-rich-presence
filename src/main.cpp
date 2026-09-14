@@ -8,7 +8,6 @@
 #include "Logging.h"
 
 #include <REX/FModule.h>
-#include <algorithm>
 #include <exception>
 #include <string_view>
 #include <utility>
@@ -17,13 +16,6 @@ namespace
 {
 	// explicit sizing disables FHookStore auto-sizing, so leave room for later hooks
 	inline constexpr std::size_t kTrampolineSize = 0x40;
-
-	[[nodiscard]] bool IsPlausibleApplicationID(std::string_view a_value) noexcept
-	{
-		return a_value.size() >= 17 &&
-		       a_value.size() <= 20 &&
-		       std::ranges::all_of(a_value, [](char a_character) { return a_character >= '0' && a_character <= '9'; });
-	}
 
 	void LogStartupDiagnostics(const REL::Version& a_runtime) noexcept
 	{
@@ -207,7 +199,7 @@ namespace
 			config->debugLogging ? "enabled"sv : "disabled"sv);
 
 		auto       applicationID = Config::GetApplicationID();
-		const auto validApplicationID = IsPlausibleApplicationID(applicationID);
+		const auto validApplicationID = Config::IsPlausibleApplicationID(applicationID);
 		if (!validApplicationID)
 		{
 			REX::WARN("sApplicationID must contain 17-20 decimal digits; Discord transport disabled");

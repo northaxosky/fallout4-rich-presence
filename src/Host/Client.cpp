@@ -2,6 +2,7 @@
 #include "Host/Navigation.h"
 
 #include <DearModdingUI/IconGlyphs.h>
+#include <DearModdingUI/UI.h>
 
 #include "Config.h"
 #include "Discord/Worker.h"
@@ -113,7 +114,6 @@ namespace Host
 			kClientID,
 			kClientDisplayName,
 			dmui::Version{ PLUGIN_VERSION_MAJOR, PLUGIN_VERSION_MINOR },
-			dmui::kForwardingClient,
 			kClientIcon,
 			{},
 			kClientOptions
@@ -124,9 +124,34 @@ namespace Host
 		DMUI_Result                                                                   g_linkRowResult{ DMUI_RESULT_OK };
 		DMUI_Result                                                                   g_faqResult{ DMUI_RESULT_OK };
 
+		using GetHostAPIFn = const DMUI_HostAPI*(DMUI_CALL*)(std::uint32_t) noexcept;
+
 		[[nodiscard]] constexpr std::size_t SlotIndex(SettingSlot a_slot) noexcept
 		{
 			return static_cast<std::size_t>(a_slot);
+		}
+
+		void AttachFeedback(dmui::SettingDescriptor& a_descriptor, const REX::ISetting& a_setting)
+		{
+			a_descriptor.resolveFeedback = [setting = &a_setting]() -> std::optional<dmui::FieldFeedback> {
+				const auto feedback = Config::GetFeedback(*setting);
+				if (!feedback)
+					return std::nullopt;
+				dmui::FieldFeedbackSeverity severity{};
+				switch (feedback->severity)
+				{
+					case Config::FeedbackSeverity::kInfo:
+						severity = dmui::FieldFeedbackSeverity::kInfo;
+						break;
+					case Config::FeedbackSeverity::kWarning:
+						severity = dmui::FieldFeedbackSeverity::kWarning;
+						break;
+					case Config::FeedbackSeverity::kError:
+						severity = dmui::FieldFeedbackSeverity::kError;
+						break;
+				}
+				return dmui::FieldFeedback{ severity, feedback->message };
+			};
 		}
 
 		template <dmui::SettingValueAlternative T>
@@ -222,6 +247,7 @@ namespace Host
 			descriptor.isModified = [setting] {
 				return setting->GetValue() != setting->GetValueDefault();
 			};
+			AttachFeedback(descriptor, *setting);
 			return descriptor;
 		}
 
@@ -259,6 +285,7 @@ namespace Host
 			descriptor.isModified = [setting] {
 				return setting->GetValue() != setting->GetValueDefault();
 			};
+			AttachFeedback(descriptor, *setting);
 			return descriptor;
 		}
 
@@ -296,6 +323,7 @@ namespace Host
 			descriptor.isModified = [setting] {
 				return setting->GetValue() != setting->GetValueDefault();
 			};
+			AttachFeedback(descriptor, *setting);
 			return descriptor;
 		}
 
@@ -333,6 +361,7 @@ namespace Host
 			descriptor.isModified = [setting] {
 				return setting->GetValue() != setting->GetValueDefault();
 			};
+			AttachFeedback(descriptor, *setting);
 			return descriptor;
 		}
 
@@ -367,163 +396,133 @@ namespace Host
 			return "Unknown";
 		}
 
-		void DrawMutedWrapped(
-			const char*                            a_text,
-			const std::optional<DMUI_ThemeColors>& a_colors) noexcept
+		[[nodiscard]] bool DrawResolvedSectionHeader(
+			const char* a_text,
+			const char* a_explicitName,
+			const char* a_secondaryMetadata = nullptr) noexcept
 		{
-			if (a_colors)
-			{
-				ImGui::PushStyleColor(ImGuiCol_Text, dmui::ToImVec4(a_colors->muted));
-				ImGui::TextWrapped("%s", a_text);
-				ImGui::PopStyleColor();
-			}
-			else
-			{
-				ImGui::TextWrapped("%s", a_text);
-			}
+			const auto glyph =
+				g_client.ResolveIconGlyph(a_text, a_explicitName, a_secondaryMetadata);
+			if (!glyph)
+				return false;
+			return g_client.DrawSectionHeader(
+				a_text,
+				*glyph ? *glyph : DearModdingUI::PhosphorGlyph::kQuestion);
 		}
 
-		void DrawPresenceField(
-			const char*                            a_label,
-			const std::string&                     a_value,
-			const std::optional<DMUI_ThemeColors>& a_colors) noexcept
+		[[nodiscard]] bool DrawPresenceField(const char* a_label, const std::string& a_value) noexcept
 		{
-			ImGui::TableNextRow();
-			(void)ImGui::TableSetColumnIndex(0);
-			ImGui::TextUnformatted(a_label);
-			(void)ImGui::TableSetColumnIndex(1);
+			dmui::ui::TableNextRow();
+			(void)dmui::ui::TableSetColumnIndex(0);
+			dmui::ui::TextUnformatted(a_label);
+			(void)dmui::ui::TableSetColumnIndex(1);
 			if (!a_value.empty())
 			{
-				ImGui::TextUnformatted(a_value.c_str());
-				return;
+				dmui::ui::TextUnformatted(a_value);
+				return true;
 			}
 
-			if (a_colors)
-			{
-				ImGui::TextColored(dmui::ToImVec4(a_colors->muted), "—");
-			}
-			else
-			{
-				ImGui::TextUnformatted("—");
-			}
+			return dmui::DrawStyledText(
+				g_client,
+				"—",
+				{ .tone = dmui::TextTone::kMuted });
 		}
 
-		void DrawWelcome(
-			const Discord::Status&                 a_status,
-			const std::optional<DMUI_ThemeColors>& a_colors) noexcept
+		[[nodiscard]] bool DrawWelcome(const Discord::Status& a_status) noexcept
 		{
-			{
-				const dmui::FontGuard font{ g_client, DMUI_FONT_ROLE_TITLE };
-				ImGui::TextUnformatted("Fallout 4 Rich Presence");
-			}
-			ImGui::Spacing();
-			{
-				const dmui::FontGuard font{ g_client, DMUI_FONT_ROLE_SUBTEXT };
-				ImGui::TextWrapped(
-					"Publishes your current Fallout 4 activity to Discord. Use the pages on the left to configure what is shared and how the card appears.");
-			}
-			ImGui::Spacing();
-			ImGui::Separator();
-			ImGui::Spacing();
+			if (!dmui::DrawStyledText(
+					g_client,
+					"Fallout 4 Rich Presence",
+					{ .fontRole = DMUI_FONT_ROLE_TITLE }))
+				return false;
+			dmui::ui::Spacing();
+			if (!dmui::DrawStyledText(
+					g_client,
+					"Publishes your current Fallout 4 activity to Discord. Use the pages on the left to configure what is shared and how the card appears.",
+					{ .fontRole = DMUI_FONT_ROLE_SUBTEXT,
+						.wrapped = true }))
+				return false;
+			dmui::ui::Spacing();
+			dmui::ui::Separator();
+			dmui::ui::Spacing();
 
 			static const auto runtime =
 				REX::FModule::GetExecutingModule().GetFileVersion();
-			ImGui::Text("Plugin version: %s", PLUGIN_VERSION);
-			ImGui::Text(
+			dmui::ui::Text("Plugin version: %s", PLUGIN_VERSION);
+			dmui::ui::Text(
 				"Fallout 4 runtime: %u.%u.%u.%u",
 				runtime.major(),
 				runtime.minor(),
 				runtime.patch(),
 				runtime.build());
-			ImGui::Text(
+			dmui::ui::Text(
 				"Map markers cached: %llu",
 				static_cast<unsigned long long>(Game::Tick::GetMarkerCount()));
 
+			const char*    health{};
+			dmui::TextTone healthTone{ dmui::TextTone::kStatusWarning };
 			if (a_status.state == Discord::ConnectionState::kDisabled)
 			{
-				if (a_colors)
-				{
-					ImGui::TextColored(
-						dmui::ToImVec4(a_colors->statusDisable),
-						"Health: Discord transport is disabled.");
-				}
-				else
-				{
-					ImGui::Text("Health: Discord transport is disabled.");
-				}
+				health = "Health: Discord transport is disabled.";
+				healthTone = dmui::TextTone::kStatusDisable;
 			}
 			else if (a_status.state == Discord::ConnectionState::kFailed ||
 					 !g_conflicts.empty())
 			{
-				const auto* message =
+				health =
 					a_status.state == Discord::ConnectionState::kFailed ?
 						"Health: Discord needs attention because the connection failed." :
 						"Health: Discord needs attention because another presence plugin was detected.";
-				if (a_colors)
-				{
-					ImGui::TextColored(
-						dmui::ToImVec4(a_colors->statusError),
-						"%s",
-						message);
-				}
-				else
-				{
-					ImGui::TextUnformatted(message);
-				}
+				healthTone = dmui::TextTone::kStatusError;
 			}
 			else if (a_status.state == Discord::ConnectionState::kConnected)
 			{
-				if (a_colors)
-				{
-					ImGui::TextColored(
-						dmui::ToImVec4(a_colors->statusSuccess),
-						"Health: Discord is connected and no plugin conflicts were detected.");
-				}
-				else
-				{
-					ImGui::Text("Health: Discord is connected and no plugin conflicts were detected.");
-				}
-			}
-			else if (a_colors)
-			{
-				ImGui::TextColored(
-					dmui::ToImVec4(a_colors->statusWarning),
-					"Health: Waiting for Discord to connect.");
+				health = "Health: Discord is connected and no plugin conflicts were detected.";
+				healthTone = dmui::TextTone::kStatusSuccess;
 			}
 			else
 			{
-				ImGui::Text("Health: Waiting for Discord to connect.");
+				health = "Health: Waiting for Discord to connect.";
 			}
-			ImGui::Spacing();
+			if (!dmui::DrawStyledText(
+					g_client,
+					health,
+					{ .tone = healthTone }))
+				return false;
+			dmui::ui::Spacing();
+			return true;
 		}
 
-		void DrawPresencePreview(
-			const Presence::Activity&              a_activity,
-			const std::optional<DMUI_ThemeColors>& a_colors) noexcept
+		[[nodiscard]] bool DrawPresencePreview(const Presence::Activity& a_activity) noexcept
 		{
-			(void)g_client.DrawSectionHeader(
-				"Live presence",
-				DearModdingUI::FindPhosphorSlugGlyphOrZero("monitor"));
+			if (!DrawResolvedSectionHeader(
+					"Live presence",
+					"monitor",
+					kClientDisplayName))
+				return false;
 
-			const auto labelWidth = ImGui::CalcTextSize("Small image text").x;
-			if (ImGui::BeginTable(
+			const auto labelWidth =
+				dmui::ui::CalcTextSize("Small image text").x;
+			if (dmui::ui::BeginTable(
 					"LivePresence",
 					2,
-					ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp))
+					dmui::ui::TableFlags::kRowBg |
+						dmui::ui::TableFlags::kSizingStretchProp))
 			{
-				ImGui::TableSetupColumn(
+				dmui::ui::TableSetupColumn(
 					"Field",
-					ImGuiTableColumnFlags_WidthFixed,
+					dmui::ui::TableColumnFlags::kWidthFixed,
 					labelWidth);
-				ImGui::TableSetupColumn(
+				dmui::ui::TableSetupColumn(
 					"Value",
-					ImGuiTableColumnFlags_WidthStretch);
-				DrawPresenceField("Details", a_activity.details, a_colors);
-				DrawPresenceField("State", a_activity.state, a_colors);
-				DrawPresenceField("Large image key", a_activity.largeImage, a_colors);
-				DrawPresenceField("Large image text", a_activity.largeText, a_colors);
-				DrawPresenceField("Small image key", a_activity.smallImage, a_colors);
-				DrawPresenceField("Small image text", a_activity.smallText, a_colors);
+					dmui::ui::TableColumnFlags::kWidthStretch);
+				const auto fieldsDrawn =
+					DrawPresenceField("Details", a_activity.details) &&
+					DrawPresenceField("State", a_activity.state) &&
+					DrawPresenceField("Large image key", a_activity.largeImage) &&
+					DrawPresenceField("Large image text", a_activity.largeText) &&
+					DrawPresenceField("Small image key", a_activity.smallImage) &&
+					DrawPresenceField("Small image text", a_activity.smallText);
 
 				if (a_activity.startTimestamp != 0)
 				{
@@ -535,167 +534,164 @@ namespace Host
 						now > a_activity.startTimestamp ?
 							now - a_activity.startTimestamp :
 							0;
-					ImGui::TableNextRow();
-					(void)ImGui::TableSetColumnIndex(0);
-					ImGui::TextUnformatted("Elapsed");
-					(void)ImGui::TableSetColumnIndex(1);
-					ImGui::Text(
+					dmui::ui::TableNextRow();
+					(void)dmui::ui::TableSetColumnIndex(0);
+					dmui::ui::TextUnformatted("Elapsed");
+					(void)dmui::ui::TableSetColumnIndex(1);
+					dmui::ui::Text(
 						"%lld:%02lld:%02lld",
 						static_cast<long long>(elapsed / 3600),
 						static_cast<long long>(elapsed / 60 % 60),
 						static_cast<long long>(elapsed % 60));
 				}
-				ImGui::EndTable();
+				dmui::ui::EndTable();
+				if (!fieldsDrawn)
+					return false;
 			}
 
-			ImGui::Spacing();
-			{
-				const dmui::FontGuard font{ g_client, DMUI_FONT_ROLE_SUBTEXT };
-				DrawMutedWrapped(
+			dmui::ui::Spacing();
+			if (!dmui::DrawStyledText(
+					g_client,
 					"An image key that has not been uploaded to the Discord application renders as a blank square.",
-					a_colors);
-			}
-			ImGui::Spacing();
+					{ .fontRole = DMUI_FONT_ROLE_SUBTEXT,
+						.tone = dmui::TextTone::kMuted,
+						.wrapped = true }))
+				return false;
+			dmui::ui::Spacing();
+			return true;
 		}
 
-		void DrawConnection(
-			const Discord::Status&                 a_status,
-			const std::optional<DMUI_ThemeColors>& a_colors) noexcept
+		[[nodiscard]] bool DrawConnection(const Discord::Status& a_status)
 		{
-			(void)g_client.DrawSectionHeader(
-				"Connection",
-				DearModdingUI::FindPhosphorSlugGlyphOrZero("gauge"));
+			if (!DrawResolvedSectionHeader(
+					"Connection",
+					"gauge",
+					"Discord"))
+				return false;
 
-			if (!a_colors)
-			{
-				ImGui::Text(
-					"State: %s",
-					ConnectionStateText(a_status.state));
-			}
-			else
-			{
-				const auto color = [&]() {
-					switch (a_status.state)
-					{
-						case Discord::ConnectionState::kDisabled:
-							return a_colors->statusDisable;
-						case Discord::ConnectionState::kConnecting:
-							return a_colors->statusWarning;
-						case Discord::ConnectionState::kConnected:
-							return a_colors->statusSuccess;
-						case Discord::ConnectionState::kFailed:
-							return a_colors->statusError;
-					}
-					return a_colors->statusInfo;
-				}();
-				ImGui::TextColored(
-					dmui::ToImVec4(color),
-					"State: %s",
-					ConnectionStateText(a_status.state));
-			}
+			const auto stateTone = [&]() {
+				switch (a_status.state)
+				{
+					case Discord::ConnectionState::kDisabled:
+						return dmui::TextTone::kStatusDisable;
+					case Discord::ConnectionState::kConnecting:
+						return dmui::TextTone::kStatusWarning;
+					case Discord::ConnectionState::kConnected:
+						return dmui::TextTone::kStatusSuccess;
+					case Discord::ConnectionState::kFailed:
+						return dmui::TextTone::kStatusError;
+				}
+				return dmui::TextTone::kStatusInfo;
+			}();
+			const auto stateText =
+				std::string{ "State: " } +
+				ConnectionStateText(a_status.state);
+			if (!dmui::DrawStyledText(
+					g_client,
+					stateText,
+					{ .tone = stateTone }))
+				return false;
 
 			if (a_status.state == Discord::ConnectionState::kConnected)
 			{
-				ImGui::Text("Pipe: discord-ipc-%d", a_status.pipeIndex);
+				dmui::ui::Text("Pipe: discord-ipc-%d", a_status.pipeIndex);
 			}
-			ImGui::Text(
+			dmui::ui::Text(
 				"Activities sent: %llu",
 				static_cast<unsigned long long>(a_status.sentCount));
 			if (!a_status.lastError.empty())
 			{
-				if (a_colors)
-				{
-					ImGui::TextColored(
-						dmui::ToImVec4(a_colors->statusError),
-						"Last error: %s",
-						a_status.lastError.c_str());
-				}
-				else
-				{
-					ImGui::Text(
-						"Last error: %s",
-						a_status.lastError.c_str());
-				}
+				const auto error = std::string{ "Last error: " } + a_status.lastError;
+				if (!dmui::DrawStyledText(
+						g_client,
+						error,
+						{ .tone = dmui::TextTone::kStatusError }))
+					return false;
 			}
 
 			for (const auto& conflict : g_conflicts)
 			{
-				if (a_colors)
-				{
-					ImGui::TextColored(
-						dmui::ToImVec4(a_colors->statusError),
-						"Conflict: %s (%s)",
-						conflict.module.c_str(),
-						conflict.displayName.c_str());
-				}
-				else
-				{
-					ImGui::Text(
-						"Conflict: %s (%s)",
-						conflict.module.c_str(),
-						conflict.displayName.c_str());
-				}
+				const auto text =
+					std::string{ "Conflict: " } +
+					conflict.module +
+					" (" +
+					conflict.displayName +
+					")";
+				if (!dmui::DrawStyledText(
+						g_client,
+						text,
+						{ .tone = dmui::TextTone::kStatusError }))
+					return false;
 			}
 			if (!g_conflicts.empty())
 			{
-				if (a_colors)
-				{
-					ImGui::PushStyleColor(
-						ImGuiCol_Text,
-						dmui::ToImVec4(a_colors->statusError));
-					ImGui::TextWrapped(
-						"Running two presence plugins can duplicate or flicker the Discord card.");
-					ImGui::PopStyleColor();
-				}
-				else
-				{
-					ImGui::TextWrapped(
-						"Running two presence plugins can duplicate or flicker the Discord card.");
-				}
+				if (!dmui::DrawStyledText(
+						g_client,
+						"Running two presence plugins can duplicate or flicker the Discord card.",
+						{ .tone = dmui::TextTone::kStatusError,
+							.wrapped = true }))
+					return false;
 			}
-			ImGui::Spacing();
+			dmui::ui::Spacing();
+			return true;
 		}
 
-		void ReportHomeWidgetResult(bool a_success, DMUI_Result& a_previous, const char* a_message)
+		[[nodiscard]] bool ReportHomeWidgetResult(
+			bool         a_success,
+			DMUI_Result& a_previous,
+			const char*  a_message,
+			bool         a_allowExternalOpenFailure = false)
 		{
 			if (a_success)
 			{
 				a_previous = DMUI_RESULT_OK;
-				return;
+				return true;
 			}
 
 			const auto result = g_client.LastResult();
-			ImGui::TextDisabled("%s", a_message);
+			dmui::ui::TextDisabled("%s", a_message);
 			if (result != a_previous)
 			{
 				a_previous = result;
 				REX::WARN("{}: {}", a_message, DMUI_ResultToString(result));
-				// A failed link click must not latch a permanent connection-health error in the host.
-				if (!g_client.SetStatus(DMUI_STATUS_SEVERITY_INFO, a_message))
-				{
-					REX::WARN("DearModdingUI status reporting failed: {}", DMUI_ResultToString(g_client.LastResult()));
-				}
 			}
+			if (!a_allowExternalOpenFailure || result != DMUI_RESULT_EXTERNAL_OPEN_FAILED)
+				return false;
+
+			// Consume each failed browser launch, including repeats; other API errors must reach the host.
+			if (!g_client.SetStatus(DMUI_STATUS_SEVERITY_INFO, a_message))
+			{
+				REX::WARN("DearModdingUI status reporting failed: {}", DMUI_ResultToString(g_client.LastResult()));
+				return false;
+			}
+			return true;
 		}
 
-		void DrawQuickLinks()
+		[[nodiscard]] bool DrawQuickLinks()
 		{
-			(void)g_client.DrawSectionHeader(
-				"Quick Links",
-				DearModdingUI::FindPhosphorSlugGlyphOrZero("link"));
-			ReportHomeWidgetResult(
-				g_client.DrawLinkRow("rich-presence-links", kQuickLinks),
-				g_linkRowResult,
-				"Project links failed. See Fallout4RichPresence.log for details.");
-			ImGui::Spacing();
+			if (!DrawResolvedSectionHeader(
+					"Quick Links",
+					"link",
+					"GitHub"))
+				return false;
+			if (!ReportHomeWidgetResult(
+					g_client.DrawLinkRow("rich-presence-links", kQuickLinks),
+					g_linkRowResult,
+					"Project links failed. See Fallout4RichPresence.log for details.",
+					true))
+				return false;
+			dmui::ui::Spacing();
+			return true;
 		}
 
-		void DrawFaq()
+		[[nodiscard]] bool DrawFaq()
 		{
-			(void)g_client.DrawSectionHeader(
-				"FAQ",
-				DearModdingUI::FindPhosphorSlugGlyphOrZero("question"));
-			ReportHomeWidgetResult(
+			if (!DrawResolvedSectionHeader(
+					"FAQ",
+					"question",
+					"Help"))
+				return false;
+			return ReportHomeWidgetResult(
 				g_client.DrawFaq("rich-presence-faq", kFaqEntries),
 				g_faqResult,
 				"FAQ unavailable. See Fallout4RichPresence.log for details.");
@@ -703,21 +699,47 @@ namespace Host
 
 		void DrawHome()
 		{
-			const auto colors = g_client.GetThemeColors();
 			const auto status = Discord::Worker::GetStatus();
 			const auto activity = Game::Tick::GetPublishedActivity();
 
-			DrawWelcome(status, colors);
-			DrawPresencePreview(activity, colors);
-			DrawConnection(status, colors);
-			DrawQuickLinks();
-			DrawFaq();
+			if (!DrawWelcome(status))
+				return;
+			if (!DrawPresencePreview(activity))
+				return;
+			if (!DrawConnection(status))
+				return;
+			if (!DrawQuickLinks())
+				return;
+			(void)DrawFaq();
 		}
 
 		template <class T>
 		void RestoreDefault(REX::TTomlSetting<T>& a_setting)
 		{
 			a_setting.SetValue(a_setting.GetValueDefault());
+		}
+
+		void HandleSaveResult(Config::SaveResult a_result)
+		{
+			switch (a_result)
+			{
+				case Config::SaveResult::kSuccess:
+					CaptureSavedValues();
+					(void)g_client.SetStatus(
+						DMUI_STATUS_SEVERITY_SUCCESS,
+						"Settings saved.");
+					break;
+				case Config::SaveResult::kInvalidDraft:
+					(void)g_client.SetStatus(
+						DMUI_STATUS_SEVERITY_WARNING,
+						"Fix invalid settings before saving.");
+					break;
+				case Config::SaveResult::kIOError:
+					(void)g_client.SetStatus(
+						DMUI_STATUS_SEVERITY_ERROR,
+						"Settings could not be saved. See Fallout4RichPresence.log for details.");
+					break;
+			}
 		}
 
 		void ResetSettings()
@@ -768,21 +790,12 @@ namespace Host
 			RestoreDefault(Config::sLabelDialogue);
 			Config::Rebuild();
 			Logging::Configure();
-			if (Config::SaveOverrides())
-			{
-				CaptureSavedValues();
-			}
+			HandleSaveResult(Config::SaveOverrides());
 		}
 
 		void ApplySettings()
 		{
-			// the quiet live path leaves invalid text in place; correct it before it reaches disk
-			Config::Rebuild(Config::Validation::kStrict);
-			Logging::Configure();
-			if (Config::SaveOverrides())
-			{
-				CaptureSavedValues();
-			}
+			HandleSaveResult(Config::SaveOverrides());
 		}
 
 		[[nodiscard]] dmui::SettingGroup MakeGeneralGroup()
@@ -1174,20 +1187,20 @@ namespace Host
 			group.settings.push_back(MakeReadOnly(
 				"connectionState",
 				"Connection",
-				[] { ImGui::TextUnformatted(ConnectionStateText(g_status.state)); }));
+				[] { dmui::ui::TextUnformatted(ConnectionStateText(g_status.state)); }));
 			group.settings.push_back(MakeReadOnly(
 				"pipeIndex",
 				"Pipe",
-				[] { ImGui::Text("discord-ipc-%d", g_status.pipeIndex); },
+				[] { dmui::ui::Text("discord-ipc-%d", g_status.pipeIndex); },
 				[] { return g_status.state == Discord::ConnectionState::kConnected; }));
 			group.settings.push_back(MakeReadOnly(
 				"sentCount",
 				"Activities sent",
-				[] { ImGui::Text("%llu", static_cast<unsigned long long>(g_status.sentCount)); }));
+				[] { dmui::ui::Text("%llu", static_cast<unsigned long long>(g_status.sentCount)); }));
 			group.settings.push_back(MakeReadOnly(
 				"lastError",
 				"Last error",
-				[] { ImGui::TextUnformatted(g_status.lastError.c_str()); },
+				[] { dmui::ui::TextUnformatted(g_status.lastError); },
 				[] { return !g_status.lastError.empty(); }));
 			group.settings.push_back(MakeReadOnly(
 				"pluginConflict",
@@ -1195,7 +1208,7 @@ namespace Host
 				[] {
 					for (const auto& conflict : g_conflicts)
 					{
-						ImGui::Text("%s (%s)", conflict.displayName.c_str(), conflict.module.c_str());
+						dmui::ui::Text("%s (%s)", conflict.displayName.c_str(), conflict.module.c_str());
 					}
 				},
 				[] { return !g_conflicts.empty(); }));
@@ -1246,6 +1259,19 @@ namespace Host
 	{
 		try
 		{
+			const auto getHostAPI =
+				dmui::detail::ResolveHostSymbol<GetHostAPIFn>("DMUI_GetAPI");
+			if (getHostAPI)
+			{
+				const auto hostAPI = getHostAPI(DMUI_HOST_ABI_CURRENT);
+				if (hostAPI && !HasFieldFeedbackAPI(hostAPI))
+				{
+					REX::ERROR(
+						"DearModdingUI field feedback is unavailable; a host containing the d034b47 field-feedback API is required, so no in-game pages were registered");
+					return;
+				}
+			}
+
 			if (!g_client.Connect())
 			{
 				if (!g_client.HostPresent())
@@ -1258,6 +1284,18 @@ namespace Host
 						"DearModdingUI registration failed: {}; a matching host and client API build is required",
 						DMUI_ResultToString(g_client.LastResult()));
 				}
+				return;
+			}
+
+			const auto generalIcon = g_client.ResolveIconGlyph(
+				kGeneralCategory.displayName,
+				kGeneralCategory.iconName,
+				kClientDisplayName);
+			if (!generalIcon)
+			{
+				REX::ERROR(
+					"DearModdingUI icon resolution is unavailable: {}; host 0.1.2 or newer is required",
+					DMUI_ResultToString(g_client.LastResult()));
 				return;
 			}
 
