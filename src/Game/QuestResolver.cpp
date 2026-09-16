@@ -91,6 +91,11 @@ namespace Game
 		const QuestCandidate* winner = nullptr;
 		for (const auto& candidate : candidates)
 		{
+			if (!candidate.displayedObjective)
+			{
+				continue;
+			}
+
 			if (!winner || static_cast<int>(candidate.priority) > static_cast<int>(winner->priority))
 			{
 				winner = &candidate;
