@@ -114,17 +114,13 @@ namespace Host
 			kClientID,
 			kClientDisplayName,
 			dmui::Version{ PLUGIN_VERSION_MAJOR, PLUGIN_VERSION_MINOR },
-			kClientIcon,
-			{},
-			kClientOptions
+			kClientIcon
 		};
 		std::array<dmui::SettingValue, static_cast<std::size_t>(SettingSlot::kCount)> g_savedValues{};
 		Discord::Status                                                               g_status{};
 		std::vector<Game::Conflict>                                                   g_conflicts;
 		DMUI_Result                                                                   g_linkRowResult{ DMUI_RESULT_OK };
 		DMUI_Result                                                                   g_faqResult{ DMUI_RESULT_OK };
-
-		using GetHostAPIFn = const DMUI_HostAPI*(DMUI_CALL*)(std::uint32_t) noexcept;
 
 		[[nodiscard]] constexpr std::size_t SlotIndex(SettingSlot a_slot) noexcept
 		{
@@ -430,21 +426,27 @@ namespace Host
 
 		[[nodiscard]] bool DrawWelcome(const Discord::Status& a_status) noexcept
 		{
-			if (!dmui::DrawStyledText(
-					g_client,
-					"Fallout 4 Rich Presence",
-					{ .fontRole = DMUI_FONT_ROLE_TITLE }))
-				return false;
-			dmui::ui::Spacing();
-			if (!dmui::DrawStyledText(
-					g_client,
-					"Publishes your current Fallout 4 activity to Discord. Use the pages on the left to configure what is shared and how the card appears.",
-					{ .fontRole = DMUI_FONT_ROLE_SUBTEXT,
-						.wrapped = true }))
-				return false;
-			dmui::ui::Spacing();
-			dmui::ui::Separator();
-			dmui::ui::Spacing();
+			dmui::ui::PanelScope welcome{ "welcome" };
+			if (welcome)
+			{
+				if (!dmui::DrawStyledText(
+						g_client,
+						"Fallout 4 Rich Presence",
+						{ .fontRole = DMUI_FONT_ROLE_TITLE }))
+					return false;
+				dmui::ui::Spacing();
+				if (!dmui::DrawStyledText(
+						g_client,
+						"Publishes your current Fallout 4 activity to Discord. Use the pages on the left to configure what is shared and how the card appears.",
+						{ .fontRole = DMUI_FONT_ROLE_SUBTEXT,
+							.wrapped = true }))
+					return false;
+			}
+			welcome.End();
+
+			dmui::ui::PanelScope healthPanel{ "health" };
+			if (!healthPanel)
+				return true;
 
 			static const auto runtime =
 				REX::FModule::GetExecutingModule().GetFileVersion();
@@ -489,12 +491,14 @@ namespace Host
 					health,
 					{ .tone = healthTone }))
 				return false;
-			dmui::ui::Spacing();
 			return true;
 		}
 
 		[[nodiscard]] bool DrawPresencePreview(const Presence::Activity& a_activity) noexcept
 		{
+			dmui::ui::PanelScope panel{ "live-presence" };
+			if (!panel)
+				return true;
 			if (!DrawResolvedSectionHeader(
 					"Live presence",
 					"monitor",
@@ -549,7 +553,6 @@ namespace Host
 					return false;
 			}
 
-			dmui::ui::Spacing();
 			if (!dmui::DrawStyledText(
 					g_client,
 					"An image key that has not been uploaded to the Discord application renders as a blank square.",
@@ -557,12 +560,14 @@ namespace Host
 						.tone = dmui::TextTone::kMuted,
 						.wrapped = true }))
 				return false;
-			dmui::ui::Spacing();
 			return true;
 		}
 
 		[[nodiscard]] bool DrawConnection(const Discord::Status& a_status)
 		{
+			dmui::ui::PanelScope panel{ "connection" };
+			if (!panel)
+				return true;
 			if (!DrawResolvedSectionHeader(
 					"Connection",
 					"gauge",
@@ -632,8 +637,15 @@ namespace Host
 							.wrapped = true }))
 					return false;
 			}
-			dmui::ui::Spacing();
 			return true;
+		}
+
+		[[nodiscard]] bool PostActionNotification(DMUI_StatusSeverity a_severity, const char* a_message)
+		{
+			if (g_client.PostNotification(a_severity, a_message))
+				return true;
+			REX::WARN("DearModdingUI notification failed: {}", DMUI_ResultToString(g_client.LastResult()));
+			return false;
 		}
 
 		[[nodiscard]] bool ReportHomeWidgetResult(
@@ -659,16 +671,14 @@ namespace Host
 				return false;
 
 			// Consume each failed browser launch, including repeats; other API errors must reach the host.
-			if (!g_client.SetStatus(DMUI_STATUS_SEVERITY_INFO, a_message))
-			{
-				REX::WARN("DearModdingUI status reporting failed: {}", DMUI_ResultToString(g_client.LastResult()));
-				return false;
-			}
-			return true;
+			return PostActionNotification(DMUI_STATUS_SEVERITY_ERROR, a_message);
 		}
 
 		[[nodiscard]] bool DrawQuickLinks()
 		{
+			dmui::ui::PanelScope panel{ "quick-links" };
+			if (!panel)
+				return true;
 			if (!DrawResolvedSectionHeader(
 					"Quick Links",
 					"link",
@@ -680,12 +690,14 @@ namespace Host
 					"Project links failed. See Fallout4RichPresence.log for details.",
 					true))
 				return false;
-			dmui::ui::Spacing();
 			return true;
 		}
 
 		[[nodiscard]] bool DrawFaq()
 		{
+			dmui::ui::PanelScope panel{ "faq" };
+			if (!panel)
+				return true;
 			if (!DrawResolvedSectionHeader(
 					"FAQ",
 					"question",
@@ -725,17 +737,17 @@ namespace Host
 			{
 				case Config::SaveResult::kSuccess:
 					CaptureSavedValues();
-					(void)g_client.SetStatus(
+					(void)PostActionNotification(
 						DMUI_STATUS_SEVERITY_SUCCESS,
 						"Settings saved.");
 					break;
 				case Config::SaveResult::kInvalidDraft:
-					(void)g_client.SetStatus(
+					(void)PostActionNotification(
 						DMUI_STATUS_SEVERITY_WARNING,
 						"Fix invalid settings before saving.");
 					break;
 				case Config::SaveResult::kIOError:
-					(void)g_client.SetStatus(
+					(void)PostActionNotification(
 						DMUI_STATUS_SEVERITY_ERROR,
 						"Settings could not be saved. See Fallout4RichPresence.log for details.");
 					break;
@@ -1259,19 +1271,6 @@ namespace Host
 	{
 		try
 		{
-			const auto getHostAPI =
-				dmui::detail::ResolveHostSymbol<GetHostAPIFn>("DMUI_GetAPI");
-			if (getHostAPI)
-			{
-				const auto hostAPI = getHostAPI(DMUI_HOST_ABI_CURRENT);
-				if (hostAPI && !HasFieldFeedbackAPI(hostAPI))
-				{
-					REX::ERROR(
-						"DearModdingUI field feedback is unavailable; a host containing the d034b47 field-feedback API is required, so no in-game pages were registered");
-					return;
-				}
-			}
-
 			if (!g_client.Connect())
 			{
 				if (!g_client.HostPresent())
@@ -1284,18 +1283,6 @@ namespace Host
 						"DearModdingUI registration failed: {}; a matching host and client API build is required",
 						DMUI_ResultToString(g_client.LastResult()));
 				}
-				return;
-			}
-
-			const auto generalIcon = g_client.ResolveIconGlyph(
-				kGeneralCategory.displayName,
-				kGeneralCategory.iconName,
-				kClientDisplayName);
-			if (!generalIcon)
-			{
-				REX::ERROR(
-					"DearModdingUI icon resolution is unavailable: {}; host 0.1.2 or newer is required",
-					DMUI_ResultToString(g_client.LastResult()));
 				return;
 			}
 

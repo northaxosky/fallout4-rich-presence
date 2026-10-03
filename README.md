@@ -13,8 +13,8 @@ Requires [F4SE](https://f4se.silverlock.org/) and the matching
 Supported runtimes: **1.10.163, 1.10.984, 1.11.221, 1.11.240**.
 
 [DearModdingUI](https://github.com/Dear-Modding-FO4/DearModdingUI) is optional for in-game
-Home and Settings pages. Use a field-feedback-capable build (host `d034b47` or newer);
-the original 0.1.2 release is too old. Discord presence works without it.
+Home and Settings pages. Requires a host using DearModdingUI ABI 2.
+Discord presence works without it.
 
 ## Configure
 
