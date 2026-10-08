@@ -37,27 +37,14 @@ namespace
 
 	void TrimSeparators(std::string& a_value)
 	{
-		std::size_t begin = 0;
-		std::size_t end = 0;
-		bool        empty = true;
-
-		for (std::size_t position = 0; position < a_value.size();)
+		const auto metrics = MeasureSeparators(a_value);
+		if (metrics.prefixLength == a_value.size())
 		{
-			const auto decoded = DecodeUtf8(a_value, position);
-			const auto next = position + decoded.length;
-			if (!decoded.valid || !IsSeparatorCodePoint(decoded.value))
-			{
-				if (empty)
-				{
-					begin = position;
-					empty = false;
-				}
-				end = next;
-			}
-			position = next;
+			a_value.clear();
+			return;
 		}
 
-		a_value = empty ? std::string{} : a_value.substr(begin, end - begin);
+		a_value = a_value.substr(metrics.prefixLength, a_value.size() - metrics.prefixLength - metrics.suffixLength);
 	}
 }
 
