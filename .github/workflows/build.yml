@@ -39,7 +39,7 @@ jobs:
 
       - name: test
         run: |
-          $targets = @('FormatTemplateTests', 'MarkerAssetTests', 'StateBadgeTests', 'MenuActivityTests', 'HostPageTests', 'ConfigFeedbackTests')
+          $targets = @('FormatTemplateTests', 'EngineTextTests', 'MarkerAssetTests', 'StateBadgeTests', 'MenuActivityTests', 'HostPageTests', 'ConfigFeedbackTests')
           xmake build -y @targets
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           foreach ($target in $targets) {

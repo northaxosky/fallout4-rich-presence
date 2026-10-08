@@ -1,11 +1,13 @@
 #include "pch.h"
 
 #include "Game/QuestResolver.h"
+#include "Presence/EngineText.h"
 
 #include <algorithm>
 #include <cstdint>
 #include <limits>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -22,26 +24,32 @@ namespace
 		std::int8_t                  priority;
 	};
 
-	[[nodiscard]] std::string CopyString(const char* a_value)
+	// the engine writes this in place of an Alias/Global tag it cannot resolve
+	[[nodiscard]] std::string_view InvalidTagPlaceholder()
 	{
-		return a_value ? std::string{ a_value } : std::string{};
+		const auto settings = RE::GameSettingCollection::GetSingleton();
+		const auto setting = settings ? settings->GetSetting("sInvalidTagString") : nullptr;
+		return setting && setting->GetType() == RE::Setting::SETTING_TYPE::kString ? setting->GetString() : std::string_view{};
 	}
 
-	[[nodiscard]] std::string ExpandObjective(const RE::BGSQuestObjective& a_objective, const RE::TESQuest& a_quest, std::uint32_t a_instanceID)
+	// same substitution the Pip-Boy and HUD apply to quest names and objectives
+	[[nodiscard]] std::string ExpandQuestText(std::string_view a_source, const RE::TESQuest& a_quest, std::uint32_t a_instanceID)
 	{
-		if (a_objective.displayText.QEmpty())
-		{
-			return {};
-		}
-
 		RE::BSString text;
-		if (!text.Set(a_objective.displayText.QString(), a_objective.displayText.QLength()))
+		if (a_source.empty() || !text.Set(a_source.data(), a_source.size()))
 		{
 			return {};
 		}
 
 		RE::BGSQuestInstanceText::ParseString(&text, &a_quest, a_instanceID);
-		return text.data() ? std::string{ text.data(), text.size() } : std::string{};
+		auto result = text.data() ? std::string{ text.data(), text.size() } : std::string{};
+		Presence::StripUnresolvedTags(result, InvalidTagPlaceholder());
+		return result;
+	}
+
+	[[nodiscard]] std::string_view ToView(const char* a_value) noexcept
+	{
+		return a_value ? std::string_view{ a_value } : std::string_view{};
 	}
 }
 
@@ -118,8 +126,10 @@ namespace Game
 		if (!cachedIdentity_ || *cachedIdentity_ != identity)
 		{
 			cachedDetails_ = QuestDetails{
-				.title = CopyString(winner->quest->GetFullName()),
-				.objective = objective ? ExpandObjective(*objective, *winner->quest, winner->instanceID) : std::string{},
+				.title = ExpandQuestText(ToView(winner->quest->GetFullName()), *winner->quest, winner->instanceID),
+				.objective = objective ?
+				                 ExpandQuestText({ objective->displayText.QString(), objective->displayText.QLength() }, *winner->quest, winner->instanceID) :
+				                 std::string{},
 				.formID = winner->formID,
 				.instanceID = winner->instanceID,
 				.objectiveIndex = objective ? objective->index : kNoObjectiveIndex,
