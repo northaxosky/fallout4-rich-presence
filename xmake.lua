@@ -65,6 +65,7 @@ target(plugin_name, function()
     add_headerfiles("src/**.h")
     add_includedirs("src")
     add_installfiles("data/F4SE/Plugins/Fallout4RichPresence.toml", { prefixdir = "F4SE/Plugins" })
+    add_installfiles("data/Interface/Translations/*.txt", { prefixdir = "Interface/Translations" })
     add_packages("nlohmann_json")
     set_pcxxheader("src/pch.h")
 
@@ -104,6 +105,7 @@ task("package", function()
 
         -- overwrite only what we own, so a local Custom.toml survives repackaging
         os.cp("data/F4SE/Plugins/Fallout4RichPresence.toml", plugins)
+        os.cp("data/Interface", root)
         os.cp("data/presets", root)
         os.cp("data/fomod", root)
 
@@ -164,6 +166,8 @@ target("HostPageTests", function()
     add_deps("commonlibf4")
     add_files("tests/HostPageTests.cpp")
     add_includedirs("src")
+    -- reads the shipped translation file by its repository path
+    set_rundir("$(projectdir)")
 end)
 
 target("ConfigFeedbackTests", function()

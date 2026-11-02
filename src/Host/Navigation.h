@@ -4,28 +4,33 @@
 
 namespace Host
 {
+	inline constexpr auto kClientID = "dearmodding.richpresence";
+	inline constexpr auto kClientDisplayName = "$RichPresence_ClientName";
 	inline constexpr auto kClientIcon = "discord-logo";
 
+	// translated names skip automatic icon guessing, so every entry names its icon
 	inline constexpr dmui::CategoryDescriptor kGeneralCategory{
 		.id = "general",
-		.displayName = "General",
+		.displayName = "$RichPresence_CategoryGeneral",
 		.sortKey = 0,
 		.iconName = "gear"
 	};
 
 	inline constexpr dmui::PageDescriptor kHomePage{
 		.id = "home",
-		.displayName = "Home",
+		.displayName = "$RichPresence_PageHome",
 		.categoryId = kGeneralCategory.id,
-		.summary = "Connection state and the latest generated presence.",
-		.sortKey = 0
+		.summary = "$RichPresence_PageHomeSummary",
+		.sortKey = 0,
+		.iconName = "house"
 	};
 
 	inline constexpr dmui::PageDescriptor kSettingsPage{
 		.id = "settings",
-		.displayName = "Settings",
+		.displayName = "$RichPresence_PageSettings",
 		.categoryId = kGeneralCategory.id,
-		.summary = "Configure Discord Rich Presence and inspect its connection.",
-		.sortKey = 10
+		.summary = "$RichPresence_PageSettingsSummary",
+		.sortKey = 10,
+		.iconName = "sliders-horizontal"
 	};
 }

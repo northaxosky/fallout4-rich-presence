@@ -23,7 +23,6 @@ namespace
 		{
 			const auto moduleBase = REX::FModule::GetExecutingModule().GetBaseAddress();
 			const auto hasAddressLibrary = Game::Tick::HasAddressLibrary(a_runtime);
-			REX::INFO("{} v{} startup: Fallout 4 runtime {}", PLUGIN_NAME, PLUGIN_VERSION, a_runtime);
 			REX::INFO(
 				"Fallout4.exe base=0x{:X}; Address Library version-{}.bin {}",
 				moduleBase,

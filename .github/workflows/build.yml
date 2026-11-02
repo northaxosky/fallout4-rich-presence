@@ -63,6 +63,7 @@ jobs:
           $expected = @(
             'F4SE\Plugins\Fallout4RichPresence.dll', 'F4SE\Plugins\Fallout4RichPresence.pdb',
             'F4SE\Plugins\Fallout4RichPresence.toml', 'fomod\info.xml', 'fomod\ModuleConfig.xml',
+            'Interface\Translations\dearmodding.richpresence_en.txt',
             'presets\Default.toml', 'presets\Full.toml', 'presets\Minimal.toml', 'presets\SpoilerFree.toml'
           )
           $root = (Resolve-Path dist).Path

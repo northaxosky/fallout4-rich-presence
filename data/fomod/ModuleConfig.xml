@@ -4,6 +4,7 @@
 	<requiredInstallFiles>
 		<file source="F4SE\Plugins\Fallout4RichPresence.dll" destination="F4SE\Plugins\Fallout4RichPresence.dll" priority="0" />
 		<file source="F4SE\Plugins\Fallout4RichPresence.pdb" destination="F4SE\Plugins\Fallout4RichPresence.pdb" priority="0" />
+		<folder source="Interface\Translations" destination="Interface\Translations" priority="0" />
 	</requiredInstallFiles>
 	<installSteps order="Explicit">
 		<installStep name="Choose a presence preset">

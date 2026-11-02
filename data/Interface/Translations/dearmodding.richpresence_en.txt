@@ -1,0 +1,155 @@
+$RichPresence_ClientName	Rich Presence
+$RichPresence_CategoryGeneral	General
+$RichPresence_PageHome	Home
+$RichPresence_PageHomeSummary	Connection state and the latest generated presence.
+$RichPresence_PageSettings	Settings
+$RichPresence_PageSettingsSummary	Configure Discord Rich Presence and inspect its connection.
+$RichPresence_WelcomeTitle	Fallout 4 Rich Presence
+$RichPresence_WelcomeBody	Publishes your current Fallout 4 activity to Discord. Use the pages on the left to configure what is shared and how the card appears.
+$RichPresence_PluginVersion	Plugin version
+$RichPresence_GameRuntime	Fallout 4 runtime
+$RichPresence_MarkersCached	Map markers cached
+$RichPresence_HealthDisabled	Health: Discord transport is disabled.
+$RichPresence_HealthFailed	Health: Discord needs attention because the connection failed.
+$RichPresence_HealthConflict	Health: Discord needs attention because another presence plugin was detected.
+$RichPresence_HealthConnected	Health: Discord is connected and no plugin conflicts were detected.
+$RichPresence_HealthWaiting	Health: Waiting for Discord to connect.
+$RichPresence_LivePresence	Live presence
+$RichPresence_FieldDetails	Details
+$RichPresence_FieldState	State
+$RichPresence_FieldLargeImage	Large image key
+$RichPresence_FieldLargeText	Large image text
+$RichPresence_FieldSmallImage	Small image key
+$RichPresence_FieldSmallText	Small image text
+$RichPresence_FieldElapsed	Elapsed
+$RichPresence_BlankImageNote	An image key that has not been uploaded to the Discord application renders as a blank square.
+$RichPresence_Connection	Connection
+$RichPresence_ConnectionState	State
+$RichPresence_Pipe	Pipe
+$RichPresence_ActivitiesSent	Activities sent
+$RichPresence_LastError	Last error
+$RichPresence_Conflict	Conflict
+$RichPresence_ConflictWarning	Running two presence plugins can duplicate or flicker the Discord card.
+$RichPresence_StateDisabled	Disabled
+$RichPresence_StateConnecting	Connecting
+$RichPresence_StateConnected	Connected
+$RichPresence_StateFailed	Failed
+$RichPresence_StateUnknown	Unknown
+$RichPresence_QuickLinks	Quick Links
+$RichPresence_GitHubNote	Open the Fallout 4 Rich Presence project in your browser.
+$RichPresence_LinksFailed	Project links failed. See Fallout4RichPresence.log for details.
+$RichPresence_Faq	FAQ
+$RichPresence_FaqBlankImage	Why is one of my images blank?
+$RichPresence_FaqBlankImageAnswer	The image key has not been uploaded to the Discord application, or the key was typed incorrectly. Keys are 1-32 lowercase letters, digits, and underscores.
+$RichPresence_FaqPrivacy	How do I hide my location or quest?
+$RichPresence_FaqPrivacyAnswer	Use the Privacy group on the Settings page, or install the Spoiler-free preset.
+$RichPresence_FaqRuntimes	Which Fallout 4 runtimes are supported?
+$RichPresence_FaqRuntimesAnswer	One DLL supports 1.10.163, 1.10.984, 1.11.221, and 1.11.240.
+$RichPresence_FaqStorage	Where are my settings stored?
+$RichPresence_FaqStorageAnswer	Data/F4SE/Plugins/Fallout4RichPresence.toml is the installed preset. Put personal overrides in Fallout4RichPresenceCustom.toml beside it so they survive reinstalling.
+$RichPresence_FaqFailed	FAQ unavailable. See Fallout4RichPresence.log for details.
+$RichPresence_SettingsSaved	Settings saved.
+$RichPresence_SettingsInvalid	Fix invalid settings before saving.
+$RichPresence_SettingsSaveFailed	Settings could not be saved. See Fallout4RichPresence.log for details.
+$RichPresence_Group_general	General
+$RichPresence_Group_privacy	Privacy
+$RichPresence_Group_format	Format
+$RichPresence_Group_assets	Assets
+$RichPresence_Group_labels	Labels
+$RichPresence_Group_discord	Discord
+$RichPresence_Group_status	Status
+$RichPresence_Setting_iSamplingIntervalMs	Sampling interval
+$RichPresence_Setting_iSamplingIntervalMs_Help	Milliseconds between game-state samples.
+$RichPresence_Setting_iIrradiatedPercent	Irradiated threshold
+$RichPresence_Setting_iIrradiatedPercent_Help	Radiation percentage of the health pool at which the irradiated badge appears.
+$RichPresence_Setting_iMarkerMaxDistance	Marker maximum distance
+$RichPresence_Setting_iMarkerMaxDistance_Help	Maximum game-unit distance for nearest discovered marker artwork and interior location fallback.
+$RichPresence_Setting_bDebugLogging	Debug logging
+$RichPresence_Setting_bDebugLogging_Help	Enables diagnostic logging.
+$RichPresence_Setting_bShowPlayerName	Show player name
+$RichPresence_Setting_bShowPlayerName_Help	Makes {name} available to templates.
+$RichPresence_Setting_bShowQuest	Show quest
+$RichPresence_Setting_bShowQuest_Help	Makes {quest} and {objective} available to templates.
+$RichPresence_Setting_bShowLocation	Show location
+$RichPresence_Setting_bShowLocation_Help	Makes {worldspace} available and permits location data.
+$RichPresence_Setting_bShowExactLocation	Show exact location
+$RichPresence_Setting_bShowExactLocation_Help	Makes {location} available when location data is permitted.
+$RichPresence_Setting_bShowCombatTarget	Show combat target
+$RichPresence_Setting_bShowCombatTarget_Help	Makes {target} available to templates while in combat.
+$RichPresence_Setting_bShowMenuActivity	Show menu activity
+$RichPresence_Setting_bShowMenuActivity_Help	Makes {activity} available and replaces details with the active menu activity.
+$RichPresence_Setting_sDetails	Details
+$RichPresence_Setting_sDetails_Help	Available tokens: {name} {level} {quest} {objective} {location} {worldspace} {state} {target} {activity}.
+$RichPresence_Setting_sState	State
+$RichPresence_Setting_sState_Help	Available tokens: {name} {level} {quest} {objective} {location} {worldspace} {state} {target} {activity}.
+$RichPresence_Setting_sLargeText	Large image tooltip
+$RichPresence_Setting_sLargeText_Help	Available tokens: {name} {level} {quest} {objective} {location} {worldspace} {state} {target} {activity}.
+$RichPresence_Setting_sSmallText	Player image tooltip
+$RichPresence_Setting_sSmallText_Help	Available tokens: {name} {level} {quest} {objective} {location} {worldspace} {state} {target} {activity}.
+$RichPresence_Setting_sCombatSmallText	Combat image tooltip
+$RichPresence_Setting_sCombatSmallText_Help	Available tokens: {name} {level} {quest} {objective} {location} {worldspace} {state} {target} {activity}.
+$RichPresence_Setting_bMarkerArtwork	Marker artwork
+$RichPresence_Setting_bMarkerArtwork_Help	Uses the nearest discovered map marker as the gameplay image when location sharing is enabled.
+$RichPresence_Setting_bStateBadge	State badges
+$RichPresence_Setting_bStateBadge_Help	Shows debounced power-armor and irradiated status badges during gameplay.
+$RichPresence_Setting_sAssetDefault	Gameplay image
+$RichPresence_Setting_sAssetDefault_Help	Use 1-32 lowercase ASCII letters, digits, or underscores, or leave empty for no image.
+$RichPresence_Setting_sAssetMainMenu	Main menu image
+$RichPresence_Setting_sAssetMainMenu_Help	Use 1-32 lowercase ASCII letters, digits, or underscores, or leave empty for no image.
+$RichPresence_Setting_sAssetLoading	Loading image
+$RichPresence_Setting_sAssetLoading_Help	Use 1-32 lowercase ASCII letters, digits, or underscores, or leave empty for no image.
+$RichPresence_Setting_sAssetCharacterCreation	Character creation image
+$RichPresence_Setting_sAssetCharacterCreation_Help	Use 1-32 lowercase ASCII letters, digits, or underscores, or leave empty for no image.
+$RichPresence_Setting_sAssetPlayer	Player image
+$RichPresence_Setting_sAssetPlayer_Help	Use 1-32 lowercase ASCII letters, digits, or underscores, or leave empty for no image.
+$RichPresence_Setting_sAssetCombat	Combat image
+$RichPresence_Setting_sAssetCombat_Help	Use 1-32 lowercase ASCII letters, digits, or underscores, or leave empty for no image.
+$RichPresence_Setting_sAssetPowerArmor	Power armor image
+$RichPresence_Setting_sAssetPowerArmor_Help	Use 1-32 lowercase ASCII letters, digits, or underscores, or leave empty for no image.
+$RichPresence_Setting_sAssetIrradiated	Irradiated image
+$RichPresence_Setting_sAssetIrradiated_Help	Use 1-32 lowercase ASCII letters, digits, or underscores, or leave empty for no image.
+$RichPresence_Setting_sLabelMainMenu	Main menu
+$RichPresence_Setting_sLabelMainMenu_Help	Text shown at the main menu.
+$RichPresence_Setting_sLabelLoading	Loading
+$RichPresence_Setting_sLabelLoading_Help	Text shown while loading.
+$RichPresence_Setting_sLabelCharacterCreation	Character creation
+$RichPresence_Setting_sLabelCharacterCreation_Help	Text shown during character creation.
+$RichPresence_Setting_sLabelGameTitle	Game title
+$RichPresence_Setting_sLabelGameTitle_Help	Large-image tooltip for fixed game states.
+$RichPresence_Setting_sLabelInGame	In game
+$RichPresence_Setting_sLabelInGame_Help	Label for normal gameplay.
+$RichPresence_Setting_sLabelInCombat	In combat
+$RichPresence_Setting_sLabelInCombat_Help	Label and empty combat-tooltip fallback for combat.
+$RichPresence_Setting_sLabelInPowerArmor	In power armor
+$RichPresence_Setting_sLabelInPowerArmor_Help	Label for the power-armor state.
+$RichPresence_Setting_sLabelIrradiated	Irradiated
+$RichPresence_Setting_sLabelIrradiated_Help	Label for the irradiated state.
+$RichPresence_Setting_sLabelLevel	Level fallback
+$RichPresence_Setting_sLabelLevel_Help	Fallback when gameplay details and state are empty. Available token: {level}.
+$RichPresence_Setting_sLabelBarter	Barter
+$RichPresence_Setting_sLabelBarter_Help	Barter activity when no vendor name is available.
+$RichPresence_Setting_sLabelBarterNamed	Named barter
+$RichPresence_Setting_sLabelBarterNamed_Help	Barter activity with a vendor name. Available token: {name}.
+$RichPresence_Setting_sLabelWorkbench	Workbench
+$RichPresence_Setting_sLabelWorkbench_Help	Workbench activity when no furniture name is available.
+$RichPresence_Setting_sLabelWorkbenchNamed	Named workbench
+$RichPresence_Setting_sLabelWorkbenchNamed_Help	Workbench activity with a furniture name. Available token: {name}.
+$RichPresence_Setting_sLabelWorkshop	Workshop
+$RichPresence_Setting_sLabelWorkshop_Help	Workshop building activity.
+$RichPresence_Setting_sLabelTerminal	Terminal
+$RichPresence_Setting_sLabelTerminal_Help	Terminal activity.
+$RichPresence_Setting_sLabelLockpicking	Lockpicking
+$RichPresence_Setting_sLabelLockpicking_Help	Lockpicking activity.
+$RichPresence_Setting_sLabelSitWait	Sit/wait
+$RichPresence_Setting_sLabelSitWait_Help	Sit/wait activity.
+$RichPresence_Setting_sLabelDialogue	Dialogue
+$RichPresence_Setting_sLabelDialogue_Help	Dialogue activity.
+$RichPresence_Setting_sApplicationID	Application ID
+$RichPresence_Setting_sApplicationID_Help	Discord application ID. Restart Fallout 4 to use a changed value.
+$RichPresence_Setting_connectionState	Connection
+$RichPresence_Setting_pipeIndex	Pipe
+$RichPresence_Setting_sentCount	Activities sent
+$RichPresence_Setting_lastError	Last error
+$RichPresence_Setting_pluginConflict	Plugin conflict
+$RichPresence_Note_Storage	Changes are written to Fallout4RichPresenceCustom.toml so they survive reinstalling the mod.
+$RichPresence_ResetTooltip	Restore every setting to the installed preset and save it.

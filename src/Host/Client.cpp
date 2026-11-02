@@ -2,6 +2,7 @@
 #include "Host/Navigation.h"
 
 #include <DearModdingUI/IconGlyphs.h>
+#include <DearModdingUI/Localization.h>
 #include <DearModdingUI/UI.h>
 
 #include "Config.h"
@@ -30,35 +31,63 @@ namespace Host
 {
 	namespace
 	{
-		inline constexpr auto kClientID = "dearmodding.richpresence";
-		inline constexpr auto kClientDisplayName = "Rich Presence";
+		using dmui::localize::LocalizeString;
+
+		inline constexpr auto kKeyPrefix = "$RichPresence_";
 		inline constexpr auto kFormatTokens = "Available tokens: {name} {level} {quest} {objective} {location} {worldspace} {state} {target} {activity}.";
 		inline constexpr auto kAssetDescription = "Use 1-32 lowercase ASCII letters, digits, or underscores, or leave empty for no image.";
+		inline constexpr auto kGitHubURL = "https://github.com/northaxosky/fallout4-rich-presence";
 
-		const std::array kQuickLinks{
-			dmui::Link{
-				.label = "GitHub",
-				.external = {
-					.targetKind = DMUI_EXTERNAL_TARGET_URI,
-					.target = "https://github.com/northaxosky/fallout4-rich-presence" },
-				.note = "Open the Fallout 4 Rich Presence project in your browser.",
-				.glyph = DearModdingUI::FindPhosphorSlugGlyphOrZero("github-logo"),
-				.action = dmui::LinkAction::kOpenExternal }
-		};
-
-		constexpr std::array kFaqEntries{
-			dmui::FaqEntry{
-				"Why is one of my images blank?",
-				"The image key has not been uploaded to the Discord application, or the key was typed incorrectly. Keys are 1-32 lowercase letters, digits, and underscores." },
-			dmui::FaqEntry{
-				"How do I hide my location or quest?",
-				"Use the Privacy group on the Settings page, or install the Spoiler-free preset." },
-			dmui::FaqEntry{
-				"Which Fallout 4 runtimes are supported?",
-				"One DLL supports 1.10.163, 1.10.984, 1.11.221, and 1.11.240." },
-			dmui::FaqEntry{
-				"Where are my settings stored?",
-				"Data/F4SE/Plugins/Fallout4RichPresence.toml is the installed preset. Put personal overrides in Fallout4RichPresenceCustom.toml beside it so they survive reinstalling." }
+		// the host translates registration text only; drawn text resolves here
+		struct DrawnText
+		{
+			LocalizeString welcomeTitle{ "$RichPresence_WelcomeTitle", "Fallout 4 Rich Presence" };
+			LocalizeString welcomeBody{ "$RichPresence_WelcomeBody", "Publishes your current Fallout 4 activity to Discord. Use the pages on the left to configure what is shared and how the card appears." };
+			LocalizeString pluginVersion{ "$RichPresence_PluginVersion", "Plugin version" };
+			LocalizeString gameRuntime{ "$RichPresence_GameRuntime", "Fallout 4 runtime" };
+			LocalizeString markersCached{ "$RichPresence_MarkersCached", "Map markers cached" };
+			LocalizeString healthDisabled{ "$RichPresence_HealthDisabled", "Health: Discord transport is disabled." };
+			LocalizeString healthFailed{ "$RichPresence_HealthFailed", "Health: Discord needs attention because the connection failed." };
+			LocalizeString healthConflict{ "$RichPresence_HealthConflict", "Health: Discord needs attention because another presence plugin was detected." };
+			LocalizeString healthConnected{ "$RichPresence_HealthConnected", "Health: Discord is connected and no plugin conflicts were detected." };
+			LocalizeString healthWaiting{ "$RichPresence_HealthWaiting", "Health: Waiting for Discord to connect." };
+			LocalizeString livePresence{ "$RichPresence_LivePresence", "Live presence" };
+			LocalizeString fieldDetails{ "$RichPresence_FieldDetails", "Details" };
+			LocalizeString fieldState{ "$RichPresence_FieldState", "State" };
+			LocalizeString fieldLargeImage{ "$RichPresence_FieldLargeImage", "Large image key" };
+			LocalizeString fieldLargeText{ "$RichPresence_FieldLargeText", "Large image text" };
+			LocalizeString fieldSmallImage{ "$RichPresence_FieldSmallImage", "Small image key" };
+			LocalizeString fieldSmallText{ "$RichPresence_FieldSmallText", "Small image text" };
+			LocalizeString fieldElapsed{ "$RichPresence_FieldElapsed", "Elapsed" };
+			LocalizeString blankImageNote{ "$RichPresence_BlankImageNote", "An image key that has not been uploaded to the Discord application renders as a blank square." };
+			LocalizeString connection{ "$RichPresence_Connection", "Connection" };
+			LocalizeString connectionState{ "$RichPresence_ConnectionState", "State" };
+			LocalizeString pipe{ "$RichPresence_Pipe", "Pipe" };
+			LocalizeString activitiesSent{ "$RichPresence_ActivitiesSent", "Activities sent" };
+			LocalizeString lastError{ "$RichPresence_LastError", "Last error" };
+			LocalizeString conflict{ "$RichPresence_Conflict", "Conflict" };
+			LocalizeString conflictWarning{ "$RichPresence_ConflictWarning", "Running two presence plugins can duplicate or flicker the Discord card." };
+			LocalizeString stateDisabled{ "$RichPresence_StateDisabled", "Disabled" };
+			LocalizeString stateConnecting{ "$RichPresence_StateConnecting", "Connecting" };
+			LocalizeString stateConnected{ "$RichPresence_StateConnected", "Connected" };
+			LocalizeString stateFailed{ "$RichPresence_StateFailed", "Failed" };
+			LocalizeString stateUnknown{ "$RichPresence_StateUnknown", "Unknown" };
+			LocalizeString quickLinks{ "$RichPresence_QuickLinks", "Quick Links" };
+			LocalizeString gitHubNote{ "$RichPresence_GitHubNote", "Open the Fallout 4 Rich Presence project in your browser." };
+			LocalizeString linksFailed{ "$RichPresence_LinksFailed", "Project links failed. See Fallout4RichPresence.log for details." };
+			LocalizeString faq{ "$RichPresence_Faq", "FAQ" };
+			LocalizeString faqBlankImage{ "$RichPresence_FaqBlankImage", "Why is one of my images blank?" };
+			LocalizeString faqBlankImageAnswer{ "$RichPresence_FaqBlankImageAnswer", "The image key has not been uploaded to the Discord application, or the key was typed incorrectly. Keys are 1-32 lowercase letters, digits, and underscores." };
+			LocalizeString faqPrivacy{ "$RichPresence_FaqPrivacy", "How do I hide my location or quest?" };
+			LocalizeString faqPrivacyAnswer{ "$RichPresence_FaqPrivacyAnswer", "Use the Privacy group on the Settings page, or install the Spoiler-free preset." };
+			LocalizeString faqRuntimes{ "$RichPresence_FaqRuntimes", "Which Fallout 4 runtimes are supported?" };
+			LocalizeString faqRuntimesAnswer{ "$RichPresence_FaqRuntimesAnswer", "One DLL supports 1.10.163, 1.10.984, 1.11.221, and 1.11.240." };
+			LocalizeString faqStorage{ "$RichPresence_FaqStorage", "Where are my settings stored?" };
+			LocalizeString faqStorageAnswer{ "$RichPresence_FaqStorageAnswer", "Data/F4SE/Plugins/Fallout4RichPresence.toml is the installed preset. Put personal overrides in Fallout4RichPresenceCustom.toml beside it so they survive reinstalling." };
+			LocalizeString faqFailed{ "$RichPresence_FaqFailed", "FAQ unavailable. See Fallout4RichPresence.log for details." };
+			LocalizeString settingsSaved{ "$RichPresence_SettingsSaved", "Settings saved." };
+			LocalizeString settingsInvalid{ "$RichPresence_SettingsInvalid", "Fix invalid settings before saving." };
+			LocalizeString settingsSaveFailed{ "$RichPresence_SettingsSaveFailed", "Settings could not be saved. See Fallout4RichPresence.log for details." };
 		};
 
 		enum class SettingSlot : std::size_t
@@ -121,10 +150,37 @@ namespace Host
 		std::vector<Game::Conflict>                                                   g_conflicts;
 		DMUI_Result                                                                   g_linkRowResult{ DMUI_RESULT_OK };
 		DMUI_Result                                                                   g_faqResult{ DMUI_RESULT_OK };
+		DrawnText                                                                     g_text;
+		bool                                                                          g_textLoaded{};
 
 		[[nodiscard]] constexpr std::size_t SlotIndex(SettingSlot a_slot) noexcept
 		{
 			return static_cast<std::size_t>(a_slot);
+		}
+
+		// Tr sidesteps LocalizeString's ambiguous char*/string_view conversions
+		[[nodiscard]] const char* Tr(const LocalizeString& a_text) noexcept
+		{
+			return a_text;
+		}
+
+		[[nodiscard]] std::string Localize(std::string_view a_key, std::string_view a_english)
+		{
+			return dmui::Client::Localize(kClientID, std::string{ kKeyPrefix }.append(a_key), a_english);
+		}
+
+		// render thread; HOST_NOT_READY until the game language is known
+		[[nodiscard]] bool LoadText() noexcept
+		{
+			if (g_textLoaded)
+				return true;
+			DMUI_Result result{};
+			(void)dmui::Client::ResolveText(kClientID, kClientDisplayName, &result);
+			if (result == DMUI_RESULT_HOST_NOT_READY)
+				return false;
+			dmui::localize::LocalizationManager::GetSingleton()->Load(kClientID);
+			g_textLoaded = true;
+			return true;
 		}
 
 		void AttachFeedback(dmui::SettingDescriptor& a_descriptor, const REX::ISetting& a_setting)
@@ -381,15 +437,15 @@ namespace Host
 			switch (a_state)
 			{
 				case Discord::ConnectionState::kDisabled:
-					return "Disabled";
+					return Tr(g_text.stateDisabled);
 				case Discord::ConnectionState::kConnecting:
-					return "Connecting";
+					return Tr(g_text.stateConnecting);
 				case Discord::ConnectionState::kConnected:
-					return "Connected";
+					return Tr(g_text.stateConnected);
 				case Discord::ConnectionState::kFailed:
-					return "Failed";
+					return Tr(g_text.stateFailed);
 			}
-			return "Unknown";
+			return Tr(g_text.stateUnknown);
 		}
 
 		[[nodiscard]] bool DrawResolvedSectionHeader(
@@ -431,13 +487,13 @@ namespace Host
 			{
 				if (!dmui::DrawStyledText(
 						g_client,
-						"Fallout 4 Rich Presence",
+						Tr(g_text.welcomeTitle),
 						{ .fontRole = DMUI_FONT_ROLE_TITLE }))
 					return false;
 				dmui::ui::Spacing();
 				if (!dmui::DrawStyledText(
 						g_client,
-						"Publishes your current Fallout 4 activity to Discord. Use the pages on the left to configure what is shared and how the card appears.",
+						Tr(g_text.welcomeBody),
 						{ .fontRole = DMUI_FONT_ROLE_SUBTEXT,
 							.wrapped = true }))
 					return false;
@@ -448,24 +504,19 @@ namespace Host
 			if (!healthPanel)
 				return true;
 
-			static const auto runtime =
-				REX::FModule::GetExecutingModule().GetFileVersion();
-			dmui::ui::Text("Plugin version: %s", PLUGIN_VERSION);
+			static const auto runtime = F4SE::GetRuntimeVersion().string();
+			dmui::ui::Text("%s: %s", Tr(g_text.pluginVersion), PLUGIN_VERSION);
+			dmui::ui::Text("%s: %s", Tr(g_text.gameRuntime), runtime.c_str());
 			dmui::ui::Text(
-				"Fallout 4 runtime: %u.%u.%u.%u",
-				runtime.major(),
-				runtime.minor(),
-				runtime.patch(),
-				runtime.build());
-			dmui::ui::Text(
-				"Map markers cached: %llu",
+				"%s: %llu",
+				Tr(g_text.markersCached),
 				static_cast<unsigned long long>(Game::Tick::GetMarkerCount()));
 
 			const char*    health{};
 			dmui::TextTone healthTone{ dmui::TextTone::kStatusWarning };
 			if (a_status.state == Discord::ConnectionState::kDisabled)
 			{
-				health = "Health: Discord transport is disabled.";
+				health = Tr(g_text.healthDisabled);
 				healthTone = dmui::TextTone::kStatusDisable;
 			}
 			else if (a_status.state == Discord::ConnectionState::kFailed ||
@@ -473,18 +524,18 @@ namespace Host
 			{
 				health =
 					a_status.state == Discord::ConnectionState::kFailed ?
-						"Health: Discord needs attention because the connection failed." :
-						"Health: Discord needs attention because another presence plugin was detected.";
+						Tr(g_text.healthFailed) :
+						Tr(g_text.healthConflict);
 				healthTone = dmui::TextTone::kStatusError;
 			}
 			else if (a_status.state == Discord::ConnectionState::kConnected)
 			{
-				health = "Health: Discord is connected and no plugin conflicts were detected.";
+				health = Tr(g_text.healthConnected);
 				healthTone = dmui::TextTone::kStatusSuccess;
 			}
 			else
 			{
-				health = "Health: Waiting for Discord to connect.";
+				health = Tr(g_text.healthWaiting);
 			}
 			if (!dmui::DrawStyledText(
 					g_client,
@@ -500,13 +551,23 @@ namespace Host
 			if (!panel)
 				return true;
 			if (!DrawResolvedSectionHeader(
-					"Live presence",
+					Tr(g_text.livePresence),
 					"monitor",
-					kClientDisplayName))
+					"Discord"))
 				return false;
 
-			const auto labelWidth =
-				dmui::ui::CalcTextSize("Small image text").x;
+			auto labelWidth = 0.0f;
+			for (const auto* label : {
+					 &g_text.fieldDetails,
+					 &g_text.fieldState,
+					 &g_text.fieldLargeImage,
+					 &g_text.fieldLargeText,
+					 &g_text.fieldSmallImage,
+					 &g_text.fieldSmallText,
+					 &g_text.fieldElapsed })
+			{
+				labelWidth = (std::max)(labelWidth, dmui::ui::CalcTextSize(Tr(*label)).x);
+			}
 			if (dmui::ui::BeginTable(
 					"LivePresence",
 					2,
@@ -521,12 +582,12 @@ namespace Host
 					"Value",
 					dmui::ui::TableColumnFlags::kWidthStretch);
 				const auto fieldsDrawn =
-					DrawPresenceField("Details", a_activity.details) &&
-					DrawPresenceField("State", a_activity.state) &&
-					DrawPresenceField("Large image key", a_activity.largeImage) &&
-					DrawPresenceField("Large image text", a_activity.largeText) &&
-					DrawPresenceField("Small image key", a_activity.smallImage) &&
-					DrawPresenceField("Small image text", a_activity.smallText);
+					DrawPresenceField(Tr(g_text.fieldDetails), a_activity.details) &&
+					DrawPresenceField(Tr(g_text.fieldState), a_activity.state) &&
+					DrawPresenceField(Tr(g_text.fieldLargeImage), a_activity.largeImage) &&
+					DrawPresenceField(Tr(g_text.fieldLargeText), a_activity.largeText) &&
+					DrawPresenceField(Tr(g_text.fieldSmallImage), a_activity.smallImage) &&
+					DrawPresenceField(Tr(g_text.fieldSmallText), a_activity.smallText);
 
 				if (a_activity.startTimestamp != 0)
 				{
@@ -540,7 +601,7 @@ namespace Host
 							0;
 					dmui::ui::TableNextRow();
 					(void)dmui::ui::TableSetColumnIndex(0);
-					dmui::ui::TextUnformatted("Elapsed");
+					dmui::ui::TextUnformatted(Tr(g_text.fieldElapsed));
 					(void)dmui::ui::TableSetColumnIndex(1);
 					dmui::ui::Text(
 						"%lld:%02lld:%02lld",
@@ -555,7 +616,7 @@ namespace Host
 
 			if (!dmui::DrawStyledText(
 					g_client,
-					"An image key that has not been uploaded to the Discord application renders as a blank square.",
+					Tr(g_text.blankImageNote),
 					{ .fontRole = DMUI_FONT_ROLE_SUBTEXT,
 						.tone = dmui::TextTone::kMuted,
 						.wrapped = true }))
@@ -569,7 +630,7 @@ namespace Host
 			if (!panel)
 				return true;
 			if (!DrawResolvedSectionHeader(
-					"Connection",
+					Tr(g_text.connection),
 					"gauge",
 					"Discord"))
 				return false;
@@ -589,7 +650,7 @@ namespace Host
 				return dmui::TextTone::kStatusInfo;
 			}();
 			const auto stateText =
-				std::string{ "State: " } +
+				std::string{ Tr(g_text.connectionState) } + ": " +
 				ConnectionStateText(a_status.state);
 			if (!dmui::DrawStyledText(
 					g_client,
@@ -599,14 +660,15 @@ namespace Host
 
 			if (a_status.state == Discord::ConnectionState::kConnected)
 			{
-				dmui::ui::Text("Pipe: discord-ipc-%d", a_status.pipeIndex);
+				dmui::ui::Text("%s: discord-ipc-%d", Tr(g_text.pipe), a_status.pipeIndex);
 			}
 			dmui::ui::Text(
-				"Activities sent: %llu",
+				"%s: %llu",
+				Tr(g_text.activitiesSent),
 				static_cast<unsigned long long>(a_status.sentCount));
 			if (!a_status.lastError.empty())
 			{
-				const auto error = std::string{ "Last error: " } + a_status.lastError;
+				const auto error = std::string{ Tr(g_text.lastError) } + ": " + a_status.lastError;
 				if (!dmui::DrawStyledText(
 						g_client,
 						error,
@@ -617,7 +679,7 @@ namespace Host
 			for (const auto& conflict : g_conflicts)
 			{
 				const auto text =
-					std::string{ "Conflict: " } +
+					std::string{ Tr(g_text.conflict) } + ": " +
 					conflict.module +
 					" (" +
 					conflict.displayName +
@@ -632,7 +694,7 @@ namespace Host
 			{
 				if (!dmui::DrawStyledText(
 						g_client,
-						"Running two presence plugins can duplicate or flicker the Discord card.",
+						Tr(g_text.conflictWarning),
 						{ .tone = dmui::TextTone::kStatusError,
 							.wrapped = true }))
 					return false;
@@ -680,14 +742,24 @@ namespace Host
 			if (!panel)
 				return true;
 			if (!DrawResolvedSectionHeader(
-					"Quick Links",
+					Tr(g_text.quickLinks),
 					"link",
 					"GitHub"))
 				return false;
+			const std::array links{
+				dmui::Link{
+					.label = "GitHub",
+					.external = {
+						.targetKind = DMUI_EXTERNAL_TARGET_URI,
+						.target = kGitHubURL },
+					.note = Tr(g_text.gitHubNote),
+					.glyph = DearModdingUI::FindPhosphorSlugGlyphOrZero("github-logo"),
+					.action = dmui::LinkAction::kOpenExternal }
+			};
 			if (!ReportHomeWidgetResult(
-					g_client.DrawLinkRow("rich-presence-links", kQuickLinks),
+					g_client.DrawLinkRow("rich-presence-links", links),
 					g_linkRowResult,
-					"Project links failed. See Fallout4RichPresence.log for details.",
+					Tr(g_text.linksFailed),
 					true))
 				return false;
 			return true;
@@ -699,18 +771,25 @@ namespace Host
 			if (!panel)
 				return true;
 			if (!DrawResolvedSectionHeader(
-					"FAQ",
+					Tr(g_text.faq),
 					"question",
 					"Help"))
 				return false;
+			const std::array entries{
+				dmui::FaqEntry{ Tr(g_text.faqBlankImage), Tr(g_text.faqBlankImageAnswer) },
+				dmui::FaqEntry{ Tr(g_text.faqPrivacy), Tr(g_text.faqPrivacyAnswer) },
+				dmui::FaqEntry{ Tr(g_text.faqRuntimes), Tr(g_text.faqRuntimesAnswer) },
+				dmui::FaqEntry{ Tr(g_text.faqStorage), Tr(g_text.faqStorageAnswer) }
+			};
 			return ReportHomeWidgetResult(
-				g_client.DrawFaq("rich-presence-faq", kFaqEntries),
+				g_client.DrawFaq("rich-presence-faq", entries),
 				g_faqResult,
-				"FAQ unavailable. See Fallout4RichPresence.log for details.");
+				Tr(g_text.faqFailed));
 		}
 
 		void DrawHome()
 		{
+			(void)LoadText();
 			const auto status = Discord::Worker::GetStatus();
 			const auto activity = Game::Tick::GetPublishedActivity();
 
@@ -739,17 +818,17 @@ namespace Host
 					CaptureSavedValues();
 					(void)PostActionNotification(
 						DMUI_STATUS_SEVERITY_SUCCESS,
-						"Settings saved.");
+						Tr(g_text.settingsSaved));
 					break;
 				case Config::SaveResult::kInvalidDraft:
 					(void)PostActionNotification(
 						DMUI_STATUS_SEVERITY_WARNING,
-						"Fix invalid settings before saving.");
+						Tr(g_text.settingsInvalid));
 					break;
 				case Config::SaveResult::kIOError:
 					(void)PostActionNotification(
 						DMUI_STATUS_SEVERITY_ERROR,
-						"Settings could not be saved. See Fallout4RichPresence.log for details.");
+						Tr(g_text.settingsSaveFailed));
 					break;
 			}
 		}
@@ -1227,6 +1306,27 @@ namespace Host
 			return group;
 		}
 
+		// keys derive from stable IDs, so descriptors keep plain English fallbacks
+		void LocalizeSettingsPage(dmui::SettingsPage& a_page)
+		{
+			for (auto& group : a_page.groups)
+			{
+				// pin the English-guessed icon so translation cannot change it
+				if (!group.glyph)
+					group.glyph = g_client.ResolveIconGlyph(group.label.c_str()).value_or(0);
+				group.label = Localize("Group_" + group.id, group.label);
+				for (auto& setting : group.settings)
+				{
+					setting.label = Localize("Setting_" + setting.id, setting.label);
+					if (!setting.description.empty())
+						setting.description = Localize("Setting_" + setting.id + "_Help", setting.description);
+				}
+			}
+			for (auto& note : a_page.notes)
+				note.text = Localize("Note_" + note.noteId, note.text);
+			a_page.actionTooltips.reset = Localize("ResetTooltip", a_page.actionTooltips.reset);
+		}
+
 		[[nodiscard]] dmui::SettingsPage MakeSettingsPage()
 		{
 			dmui::SettingsPage page;
@@ -1242,21 +1342,23 @@ namespace Host
 				.reset = &ResetSettings,
 				.apply = &ApplySettings
 			};
-			page.actionTooltips = dmui::SettingsPageActionTooltips{
-				.reset = "Restore every setting to the installed preset and save it.",
-				.apply = [](std::size_t a_pending) {
-					return "Save " + std::to_string(a_pending) +
-				           (a_pending == 1 ? " change" : " changes") +
-				           " to Fallout4RichPresenceCustom.toml.";
-				}
-			};
+			// reset saves immediately, unlike the host's draft-only default
+			page.actionTooltips.reset = "Restore every setting to the installed preset and save it.";
 			page.notes = {
 				dmui::SettingsPageNote{
 					.text = "Changes are written to Fallout4RichPresenceCustom.toml so they survive reinstalling the mod.",
-					.muted = true }
+					.muted = true,
+					.noteId = "Storage" }
 			};
 			page.prepare = [] {
 				g_status = Discord::Worker::GetStatus();
+			};
+			page.prepareView = [localized = false](dmui::SettingsPage& a_page) mutable {
+				if (!localized && LoadText())
+				{
+					LocalizeSettingsPage(a_page);
+					localized = true;
+				}
 			};
 			return page;
 		}
